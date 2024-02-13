@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "alkahest.helloWorld",
-        "title": "Hello World"
+        "command": "alkahest.geminiTest",
+        "title": "Gemini Test"
       }
     ]
   },
