@@ -26,7 +26,9 @@ export function activate(context: vscode.ExtensionContext) {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		const response = await gemini.request("Hello, Gemini!");
-		vscode.window.showInformationMessage(response);
+		if (response) {
+			vscode.window.showInformationMessage(response);
+		}
 	});
 
 	context.subscriptions.push(geminiTest);
