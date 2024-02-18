@@ -1,59 +1,58 @@
-import path from 'path';
-// The module 'vscode' contains the VS Code extensibility API
-import * as vscode from 'vscode';
-import * as dotenv from 'dotenv';
+import * as path from 'path';     // The module 'path' is used to work with file and directory paths
+import * as vscode from 'vscode'; // The module 'vscode' contains the VS Code extensibility API
+import * as dotenv from 'dotenv'; // The module 'dotenv' is used to load environment variables from a .env file
 
 import GeminiAI from './models/gemini-ai/gemini-ai';
-
-//import { OpenAIMessage } from './models/openai/openai';// Not used
-//import OpenAI from './models/openai/openai';// Not used
+import SonarQube from './models/sonarqube/sonarqube';
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  // Load environment variables from .env file
+  const dotenvPath = path.resolve(__dirname, '../.env'); // Path to .env file
+  dotenv.config({ path: dotenvPath });
 
-	const dotenvPath = path.resolve(__dirname, '../.env'); // Path to .env file
-	dotenv.config({ path: dotenvPath }); // Load environment variables from .env file
+  // Use the console to output diagnostic information (console.log) and errors (console.error)
+  // This line of code will only be executed once when your extension is activated
+  //console.log('Congratulations, your extension `alkahest` is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	//console.log('Congratulations, your extension "alkahest" is now active!');
+  let gemini = new GeminiAI(); // Create a new instance of the GeminiAI class to interact with the Gemini model
+  let sonarQube = new SonarQube(); // Create a new instance of the SonarQube class to interact with the SonarQube model
 
-	const gemini = new GeminiAI(); // Create a new instance of the GeminiAI class to interact with the Gemini model
-	//const openai = new OpenAI();
+  // The command has been defined in the package.json file
+  // Now provide the implementation of the command with registerCommand
+  // The commandId parameter must match the command field in package.json
+  let geminiTest = vscode.commands.registerCommand(
+    'alkahest.geminiTest',
+    async () => {
+      // The code placed here will be executed every time the command is executed
+      const response = await gemini.request('Say this is a test!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let geminiTest = vscode.commands.registerCommand('alkahest.geminiTest', async () => {
-		// The code placed here will be executed every time the command is executed
-		const response = await gemini.request("Say this is a test!");
+      if (response) {
+        // Display a message box to the user
+        vscode.window.showInformationMessage(response);
+      }
+    }
+  );
 
-		if (response) {
-			// Display a message box to the user
-			vscode.window.showInformationMessage(response);
-		}
-	});
+  let sonarQubeScan = vscode.commands.registerCommand(
+    'alkahest.sonarQubeScan',
+    async () => {
+      await sonarQube.scan();
+    }
+  );
 
-	/* Not used
-	let openaiTest = vscode.commands.registerCommand('alkahest.openaiTest', async () => {
-		const messages: OpenAIMessage[] = [
-			{
-				role: "user",
-				content: "Say this is a test"
-			},
-		];
+  let sonarQubeMeasures = vscode.commands.registerCommand(
+    'alkahest.sonarQubeMeasures',
+    async () => {
+      const measures = await sonarQube.getMeasures();
+      console.log(measures);
+    }
+  );
 
-		const response = await openai.request(messages);
-		if (response) {
-			vscode.window.showInformationMessage(response);
-		}
-	});
-
-	context.subscriptions.push(openaiTest);
-	*/
-
-	context.subscriptions.push(geminiTest); // Add the command to the list of disposables
+  context.subscriptions.push(geminiTest); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeMeasures); // Add the command to the list of disposables
 }
 
 // This method is called when your extension is deactivated

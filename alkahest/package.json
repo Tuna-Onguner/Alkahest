@@ -16,6 +16,14 @@
       {
         "command": "alkahest.geminiTest",
         "title": "Gemini Test"
+      },
+      {
+        "command": "alkahest.sonarQubeScan",
+        "title": "SonarQube Scan"
+      },
+      {
+        "command": "alkahest.sonarQubeMeasures",
+        "title": "SonarQube Get Measures"
       }
     ]
   },
@@ -42,6 +50,6 @@
     "@google/generative-ai": "^0.2.0",
     "axios": "^1.6.7",
     "dotenv": "^16.4.3",
-    "openai": "^4.28.0"
+    "sonarqube-scanner": "^3.3.0"
   }
 }
