@@ -20,10 +20,6 @@
       {
         "command": "alkahest.sonarQubeScan",
         "title": "SonarQube Scan"
-      },
-      {
-        "command": "alkahest.sonarQubeMeasures",
-        "title": "SonarQube Get Measures"
       }
     ]
   },

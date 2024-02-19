@@ -1,86 +1,60 @@
-import * as vscode from "vscode";
+import { window, workspace } from "vscode";
 
 export default class SonarQube {
-  private SCToken: any;
-  private organization: any;
-  private projectKey: any;
-  private isScanned: boolean;
+  private SCToken: any; // The SonarCloud authentication token
+  private projectKey: any; // Unique key to the project
+  private organization: any; // Unique organization of the user
 
   constructor(projectKey?: string) {
     this.SCToken = process.env.SONARCLOUD_TOKEN;
     this.organization = process.env.SONARCLOUD_ORGANIZATION;
-    this.projectKey = projectKey || `alkahest:${this.generateProjectKey()}`;
-    this.isScanned = false;
+    this.projectKey = projectKey ?? `project:${new Date().getTime()}`;
   }
 
-  async scan(): Promise<void> {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-      vscode.window.showErrorMessage(
-        "Please open a project before running SonarScanner"
-      );
-
-      return;
-    }
-
-    const { spawn } = require("child_process");
-    const command = "sonar-scanner";
-    const args = [
-      `-Dsonar.host.url=https://sonarcloud.io/`,
-      `-Dsonar.token=${this.SCToken}`,
-      `-Dsonar.organization=${this.organization}`,
-      `-Dsonar.projectKey=${this.projectKey}`,
-      `-Dsonar.projectName=${workspaceFolders[0].name}`,
-      `-Dsonar.sources=${workspaceFolders[0].uri.fsPath}`,
-    ];
-
-    const options = { cwd: workspaceFolders[0].uri.fsPath, stdio: "inherit" };
-
-    const childProcess = spawn(command, args, options);
-
-    childProcess.on("exit", (code: any) => {
-      if (code === 0) {
-        vscode.window.showInformationMessage(
-          "SonarScanner completed successfully"
-        );
-
-        this.isScanned = true;
+  async scan(): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+      const wsfs = workspace.workspaceFolders;
+      if (!wsfs) {
+        window.showErrorMessage("Please open a project before scanning");
+        reject(new Error("No open projects"));
       } else {
-        vscode.window.showErrorMessage("SonarScanner failed");
+        const proPath = wsfs[0].uri.fsPath;
+
+        const options = { cwd: proPath, stdio: "inherit" };
+        const command = "sonar-scanner";
+        const args = [
+          `-Dsonar.host.url=https://sonarcloud.io/`,
+          `-Dsonar.token=${this.SCToken}`,
+          `-Dsonar.organization=${this.organization}`,
+          `-Dsonar.projectKey=${this.projectKey}`,
+          `-Dsonar.projectName=${wsfs[0].name
+            .replace(/ /g, "_")
+            .toUpperCase()}`,
+          `-Dsonar.sources=${proPath}`,
+        ];
+
+        const { spawn } = require("child_process");
+        spawn(command, args, options)
+          .on("exit", async (code: number) => {
+            if (code === 0) {
+              window.showInformationMessage("Scanning completed successfully");
+
+              const axios = require("axios");
+              const response = await axios.get(
+                `https://sonarcloud.io/api/measures/component?component=${this.projectKey}
+                &metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density`
+              );
+
+              resolve(response.data);
+            } else {
+              window.showErrorMessage("Scanning failed");
+              reject(new Error(`Process exited with code: ${code}`));
+            }
+          })
+          .on("error", (error: any) => {
+            reject(error);
+          });
       }
     });
-  }
-
-  async getMeasures(): Promise<string | undefined> {
-    if (!this.isScanned) {
-      vscode.window.showErrorMessage(
-        "Please run SonarScanner before trying to get measures"
-      );
-
-      return undefined;
-    }
-
-    const axios = require("axios");
-    const response = await axios.get(
-      `https://sonarcloud.io/api/measures/component?component=${this.projectKey}
-      &metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density`
-    );
-
-    const measures = response.data.component.measures;
-
-    return measures ? JSON.stringify(measures, null, 2) : "No measures found";
-  }
-
-  private generateProjectKey(length: number = 11): string {
-    const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      result += characters.charAt(randomIndex);
-    }
-
-    return result;
   }
 }

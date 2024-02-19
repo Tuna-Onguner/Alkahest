@@ -1,15 +1,15 @@
-import * as path from 'path';     // The module 'path' is used to work with file and directory paths
-import * as vscode from 'vscode'; // The module 'vscode' contains the VS Code extensibility API
-import * as dotenv from 'dotenv'; // The module 'dotenv' is used to load environment variables from a .env file
+import * as path from "path"; // The module 'path' is used to work with file and directory paths
+import * as vscode from "vscode"; // The module 'vscode' contains the VS Code extensibility API
+import * as dotenv from "dotenv"; // The module 'dotenv' is used to load environment variables from a .env file
 
-import GeminiAI from './models/gemini-ai/gemini-ai';
-import SonarQube from './models/sonarqube/sonarqube';
+import GeminiAI from "./models/gemini-ai/gemini-ai";
+import SonarQube from "./models/sonarqube/sonarqube";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   // Load environment variables from .env file
-  const dotenvPath = path.resolve(__dirname, '../.env'); // Path to .env file
+  const dotenvPath = path.resolve(__dirname, "../.env"); // Path to .env file
   dotenv.config({ path: dotenvPath });
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
@@ -23,10 +23,10 @@ export function activate(context: vscode.ExtensionContext) {
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   let geminiTest = vscode.commands.registerCommand(
-    'alkahest.geminiTest',
+    "alkahest.geminiTest",
     async () => {
       // The code placed here will be executed every time the command is executed
-      const response = await gemini.request('Say this is a test!');
+      const response = await gemini.request("Say this is a test!");
 
       if (response) {
         // Display a message box to the user
@@ -36,23 +36,15 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   let sonarQubeScan = vscode.commands.registerCommand(
-    'alkahest.sonarQubeScan',
+    "alkahest.sonarQubeScan",
     async () => {
-      await sonarQube.scan();
-    }
-  );
-
-  let sonarQubeMeasures = vscode.commands.registerCommand(
-    'alkahest.sonarQubeMeasures',
-    async () => {
-      const measures = await sonarQube.getMeasures();
-      console.log(measures);
+      const data = await sonarQube.scan(); // Use the data as needed
+      console.log(data); // Remove this  later on -- only for testing purposes
     }
   );
 
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeMeasures); // Add the command to the list of disposables
 }
 
 // This method is called when your extension is deactivated
