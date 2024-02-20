@@ -50,8 +50,17 @@ export default class SonarQube {
             `-Dsonar.projectKey=${this.projectKey}`,
             `-Dsonar.projectName=${this.projectKey.toUpperCase()}`,
             `-Dsonar.sources=${proPath}`,
-            `-Dsonar.sourceEncoding=${this.projectEncoding}`,
-            `-Dsonar.exclusions=node_modules/**,dist/**,build/**,out/**,target/**,.vscode/**,.git/**,.idea/**,*.json,*.yml,*.yaml,*.md,*.xml,*.html,*.css,*.scss,*.less,*.js,*.jsx,*.ts,*.tsx,*.php,*.py,*.java,*.c,*.cpp,*.h,*.hpp,*.cs,*.vb,*.fs,*.fsx,*.fsi,*.swift,*.kt,*.kts,*.groovy,*.gradle,*.rb,*.rake,*.gemspec,*.pl,*.pm,*.t,*.pod,*.php,*.php3,*.php4,*.php5,*.php7,*.phtml,*.phpt,*.phpunit,*.phpcs,*.phpcbf,*.phpdoc,*.phpini,*.phps,*.phpsa,*.phpspec,*.phpsr,*.phpmd,*.phpunit,*.phpunit.xml,*.phpunit.xml.dist,*.phpunit.xml.dist.dist,*.phpunit.xml.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist.dist.dist.dist.dist,*.phpunit.xml.dist.dist.dist.dist.dist.dist.dist.dist.dist,*.phpunit.xml`,
+            `-Dsonar.sourceEncoding=UTF-8`,
+            `-Dsonar.exclusions=node_modules/**,dist/**,build/**,out/**,target/**,.vscode/**,.git/**,.idea/**,
+              .DS_Store,.gitignore,.gitattributes,.editorconfig,.eslintrc.js,.prettierrc.js,.prettierignore,
+              .vscodeignore,.vscode/settings.json,.vscode/launch.json,.vscode/tasks.json,.vscode/extensions.json,
+              .vscode/keybindings.json,.vscode/snippets/**,.vscode/remote-containers/**,.vscode/remote-data/**,
+              .vscode/remote-ssh/**,.vscode/remote-sync/**,.vscode/remote-wsl/**,.vscode-server/**,.vscode-test/**,
+              .vscode-webview/**,.vscode-workspace/**,.vscode-server-insiders/**,.vscode-server-insiders-test/**,
+              .vscode-server-oss/**,.vscode-server-oss-test/**,.vscode-server-test/**,.vscode-server-remote/**,
+              .vscode-server-remote-test/**,.vscode-server-remote-insiders/**,
+              .vscode-server-remote-insiders-test/**,.vscode-server-remote-oss/**,
+              .vscode-server-remote-oss-test/**,.vscode-server-remote-oss-insiders`,
           ];
 
           if (this.projectDescription) {
@@ -89,7 +98,7 @@ export default class SonarQube {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             progress.report({ increment: 1 });
 
-            return response.data;
+            return response;
           } else {
             window.showErrorMessage("Scanning failed");
             throw new Error(`Process exited with code: ${exitCode}`);

@@ -4,6 +4,7 @@ import * as dotenv from "dotenv"; // The module 'dotenv' is used to load environ
 
 import GeminiAI from "./models/gemini-ai/gemini-ai";
 import SonarQube from "./models/sonarqube/sonarqube";
+import SonarCloudSecondarySidebarView from "./views/views/sonarcloud-ssv";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -16,8 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   //console.log('Congratulations, your extension `alkahest` is now active!');
 
-  let gemini = new GeminiAI(); // Create a new instance of the GeminiAI class to interact with the Gemini model
-  let sonarQube = new SonarQube(); // Create a new instance of the SonarQube class to interact with the SonarQube model
+  const gemini = new GeminiAI(); // Create a new instance of the GeminiAI class to interact with the Gemini model
+  const sonarQube = new SonarQube(); // Create a new instance of the SonarQube class to interact with the SonarQube model
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
@@ -38,8 +39,12 @@ export function activate(context: vscode.ExtensionContext) {
   let sonarQubeScan = vscode.commands.registerCommand(
     "alkahest.sonarQubeScan",
     async () => {
-      const data = await sonarQube.scan(); // Use the data as needed
-      console.log(data); // Remove this  later on -- only for testing purposes
+      const response = await sonarQube.scan(); // Fetch the response from the SonarQube API
+      const measures = response.data.component.measures;
+
+      // Display the response in the seconndary sidebar
+      SonarCloudSecondarySidebarView.createOrShow(context);
+      SonarCloudSecondarySidebarView.update(measures);
     }
   );
 
