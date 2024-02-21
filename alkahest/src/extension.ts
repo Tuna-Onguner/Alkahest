@@ -42,6 +42,8 @@ export function activate(context: vscode.ExtensionContext) {
       const response = await sonarQube.scan(); // Fetch the response from the SonarQube API
       const measures = response.data.component.measures;
 
+      //console.log(measures);
+
       // Display the response in the seconndary sidebar
       SonarCloudSecondarySidebarView.createOrShow(context);
       SonarCloudSecondarySidebarView.update(measures);

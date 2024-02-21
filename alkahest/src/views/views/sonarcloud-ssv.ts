@@ -11,7 +11,7 @@ export default class SonarCloudSecondarySidebarView {
     } else {
       SonarCloudSecondarySidebarView._panel = vscode.window.createWebviewPanel(
         "sonarCloudSecondarySidebarView",
-        "SonarCloud Scanning Results",
+        "Aklahest",
         column,
         {
           enableScripts: true,
@@ -36,6 +36,41 @@ export default class SonarCloudSecondarySidebarView {
   }
 
   private static _getWebviewContent(data: any): string {
+    function color(value: number): string {
+      if (value <= 33) {
+        return "#0BDA51";
+      } else if (value <= 66) {
+        return "#FFEA00";
+      } else {
+        return "#FF3131";
+      }
+    }
+
+    let tableRows = "";
+    for (let i = 0; i < data.length; i++) {
+      const value = data[i].value;
+      const metricName = data[i].metric.replace(/_/g, " ");
+      const strokeDasharray = `${value * 3.14}, 314`;
+      tableRows += `
+            <tr>
+                <td>
+                  <text>${metricName.toUpperCase().concat(":")}</text>
+                </td>
+                <td>
+                    <svg class="progress-ring" width="120" height="120">
+                        <circle class="progress-ring__circle" stroke="#D3D3D3" stroke-width="4" fill="transparent" r="50" cx="60" cy="60"/>
+                        <circle class="progress-ring__value" stroke="${color(
+                          value
+                        )}" stroke-width="4" fill="transparent" r="50" cx="60" cy="60" stroke-dasharray="${strokeDasharray}" stroke-dashoffset="314"/>
+                        <text x="50%" y="50%" text-anchor="middle" stroke="${color(
+                          value
+                        )}" stroke-width="1px" dy=".3em">${value * 1.0}%</text>
+                    </svg>
+                </td>
+            </tr>
+        `;
+    }
+
     return `
         <!DOCTYPE html>
         <html lang="en">
@@ -46,13 +81,32 @@ export default class SonarCloudSecondarySidebarView {
                 content="width=device-width, initial-scale=1.0"
             />
             <title>Alkahest</title>
+            <style>
+                .progress-ring__circle {
+                    stroke: #d2d3d4;
+                }
+                .progress-ring__value {
+                    stroke: #4caf50;
+                    stroke-linecap: round;
+                    transform: rotate(-90deg);
+                    transform-origin: 50% 50%;
+                }
+                table {
+                    width: 100%;
+                }
+                td {
+                    padding: 10px;
+                }
+            </style>
         </head>
         <body>
             <h1>SonarCloud Scanning Results</h1>
             <p>Here are the results of the SonarCloud scan:</p>
-            <pre>${JSON.stringify(data, null, 2)}</pre>
+            <table>
+                ${tableRows}
+            </table>
         </body>
         </html>
-        `;
+    `;
   }
 }
