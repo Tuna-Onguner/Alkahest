@@ -28,85 +28,98 @@ export default class SonarCloudSecondarySidebarView {
     }
   }
 
-  public static update(data: any): void {
+  public static update(measures: any, metrics: any): void {
     if (SonarCloudSecondarySidebarView._panel) {
       SonarCloudSecondarySidebarView._panel.webview.html =
-        SonarCloudSecondarySidebarView._getWebviewContent(data);
+        SonarCloudSecondarySidebarView._getWebviewContent(measures, metrics);
     }
   }
 
-  private static _getWebviewContent(data: any): string {
-    function color(value: number): string {
-      if (value <= 33) {
-        return "#0BDA51";
-      } else if (value <= 66) {
-        return "#FFEA00";
-      } else {
-        return "#FF3131";
-      }
+  private static _getWebviewContent(measures: any, metrics: any): string {
+    function titleCase(str: string): string {
+      return str
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+
+    function isFloat(value: any): boolean {
+      // Convert the value to a number if it's a string
+      const num = typeof value === 'string' ? Number(value) : value;
+    
+      // Check if it's a valid number and has a decimal part
+      return typeof num === 'number' && num === num && num % 1 !== 0;
+    }
+
+    function chooseColor(value: number) {
+      const whte = "#F9F6EE"; // for no issues at all
+      const grn1 = "#339966"; // for basic levels of issues
+      const grn2 = "#669900"; // for intermediate levels of issues
+      const yllw = "#FDDA0D"; // for advanced levels of issues
+      const orng = "#E5682D"; // for severe levels of issues
+      const redd = "#CC3333"; // for critical levels of issues
+
+      return yllw;
+    }
+
+    function getFullDescription(metric: string): any {
+      const fullDescriptions: any = {
+        "bugs": "A coding error that will break your code and needs to be fixed immediately.",
+        "code_smells": "Code that is confusing and difficult to maintain.",
+        "duplicated_lines_density": "Identical lines of code.",
+        "ncloc": "The number of non-commented lines of code in the project.",
+        "vulnerabilities": "Code that can be exploited by hackers.",
+        "cognitive_complexity": "A measure of how difficult the application is to understand.",
+        //"cyclomatic_complexity": "Measurement of the minimum number of test cases required for full test coverage.", Not working
+      };
+
+      return fullDescriptions[metric];
     }
 
     let tableRows = "";
-    for (let i = 0; i < data.length; i++) {
-      const value = data[i].value;
-      const metricName = data[i].metric.replace(/_/g, " ");
-      const strokeDasharray = `${value * 3.14}, 314`;
-      tableRows += `
-            <tr>
-                <td>
-                  <text>${metricName.toUpperCase().concat(":")}</text>
-                </td>
-                <td>
-                    <svg class="progress-ring" width="120" height="120">
-                        <circle class="progress-ring__circle" stroke="#D3D3D3" stroke-width="4" fill="transparent" r="50" cx="60" cy="60"/>
-                        <circle class="progress-ring__value" stroke="${color(
-                          value
-                        )}" stroke-width="4" fill="transparent" r="50" cx="60" cy="60" stroke-dasharray="${strokeDasharray}" stroke-dashoffset="314"/>
-                        <text x="50%" y="50%" text-anchor="middle" stroke="${color(
-                          value
-                        )}" stroke-width="1px" dy=".3em">${value * 1.0}%</text>
-                    </svg>
-                </td>
-            </tr>
-        `;
-    }
+    const radius = 30;
+    for (let i = 0; i < measures.length; i++) {
+      const value = measures[i].value;
+      const metric = measures[i].metric;
+      const title = titleCase(metric.replace(/_/g, " "));
+      const fullDescription = getFullDescription(metric);
 
-    return `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8"/>
-            <meta 
-                name="viewport" 
-                content="width=device-width, initial-scale=1.0"
-            />
-            <title>Alkahest</title>
-            <style>
-                .progress-ring__circle {
-                    stroke: #d2d3d4;
-                }
-                .progress-ring__value {
-                    stroke: #4caf50;
-                    stroke-linecap: round;
-                    transform: rotate(-90deg);
-                    transform-origin: 50% 50%;
-                }
-                table {
-                    width: 100%;
-                }
-                td {
-                    padding: 10px;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>SonarCloud Scanning Results</h1>
-            <p>Here are the results of the SonarCloud scan:</p>
-            <table>
-                ${tableRows}
-            </table>
-        </body>
-        </html>
-    `;
+      tableRows += `
+        <tr>
+          <td>
+            <svg width="100" height="100">
+              <circle cx="50" cy="50" r="${(radius + 3)}" fill="white"/>
+              <circle cx="50" cy="50" r="${radius}" fill="${chooseColor(value)}"/>
+              <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" fill="black">${value}${isFloat(value) ? "%" : ""}</text>
+            </svg>
+          </td>
+          <td>
+            <p style="margin-bottom: 0;">${title}</p>
+            <p style="font-size: 0.8em; color: grey; margin-top: 0.5em;">${fullDescription}</p>
+          </td>
+        </tr>
+      `;
+  }
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+        />
+        <title>Aklahest</title>
+      </head>
+      <body>
+        <h1>SonarCloud Measures</h1>
+        <table>
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
   }
 }

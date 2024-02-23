@@ -39,20 +39,37 @@ export function activate(context: vscode.ExtensionContext) {
   let sonarQubeScan = vscode.commands.registerCommand(
     "alkahest.sonarQubeScan",
     async () => {
-      const response = await sonarQube.scan(); // Fetch the response from the SonarQube API
-      const measures = response.data.component.measures;
+      await sonarQube.scan(); // Fetch the response from the SonarQube API
+      // Execute the command to get the measures from the SonarQube API
+      vscode.commands.executeCommand("alkahest.sonarQubeGetMeasures");
+    }
+  );
 
-      //console.log(measures);
+  let sonarQubeGetMeasures = vscode.commands.registerCommand(
+    "alkahest.sonarQubeGetMeasures",
+    async () => {
+      const response = await sonarQube.getMeasures(); // Fetch the metrics from the SonarQube API
 
       // Display the response in the seconndary sidebar
       SonarCloudSecondarySidebarView.createOrShow(context);
-      SonarCloudSecondarySidebarView.update(measures);
+      SonarCloudSecondarySidebarView.update(response.measures, response.metrics);
+    }
+  );
+
+  let sonarQubeLogout = vscode.commands.registerCommand(
+    "alkahest.sonarQubeLogout",
+    async () => {
+      await sonarQube.logout(); // Logout from the SonarQube API
     }
   );
 
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeGetMeasures); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeLogout); // Add the command to the list of disposables
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  vscode.commands.executeCommand("alkahest.sonarQubeLogout"); // Execute the command to logout from the SonarQube API
+}

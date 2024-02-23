@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+
 import { window, workspace, ProgressLocation } from "vscode";
 
 export default class SonarQube {
@@ -39,7 +40,7 @@ export default class SonarQube {
 
           const proPath = wsfs[0].uri.fsPath;
           const proSize = SonarQube.getDirectorySize(proPath); // in MB
-          const msPerMB = 810; // approximately 810ms per MB
+          const msPerMB = 1000; // approximately 810ms per MB
 
           const options = { cwd: proPath, stdio: "inherit" };
           const command = "sonar-scanner";
@@ -50,7 +51,7 @@ export default class SonarQube {
             `-Dsonar.projectKey=${this.projectKey}`,
             `-Dsonar.projectName=${this.projectKey.toUpperCase()}`,
             `-Dsonar.sources=${proPath}`,
-            `-Dsonar.sourceEncoding=UTF-8`,
+            `-Dsonar.sourceEncoding=${this.projectEncoding}`,
             `-Dsonar.exclusions=node_modules/**,dist/**,build/**,out/**,target/**,.vscode/**,.git/**,.idea/**,
               .DS_Store,.gitignore,.gitattributes,.editorconfig,.eslintrc.js,.prettierrc.js,.prettierignore,
               .vscodeignore,.vscode/settings.json,.vscode/launch.json,.vscode/tasks.json,.vscode/extensions.json,
@@ -85,20 +86,10 @@ export default class SonarQube {
           });
 
           if (exitCode === 0) {
-            const axios = require("axios");
-            const response = await axios.get(
-              `https://sonarcloud.io/api/measures/component?component=${this.projectKey}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density`
-            );
+            progress.report({ increment: 100 - progressValue });
+            window.showInformationMessage("Scanning completed");
 
-            progress.report({
-              message: "Scanning completed successfully",
-              increment: 9,
-            });
-
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            progress.report({ increment: 1 });
-
-            return response;
+            return;
           } else {
             window.showErrorMessage("Scanning failed");
             throw new Error(`Process exited with code: ${exitCode}`);
@@ -111,12 +102,76 @@ export default class SonarQube {
     );
   }
 
+  public async getMeasures(): Promise<any> {
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+    const response = await axios.get(
+      // The necessary metrics are hardcoded in the URL
+      // They can be changed according to the requirements if needed
+      `https://sonarcloud.io/api/measures/component?component=${this.projectKey}
+      &metricKeys=bugs,code_smells,vulnerabilities,duplicated_lines_density,ncloc,cognitive_complexity
+      &additionalFields=metrics`,
+      options
+    );
+
+    return {
+      measures: response.data.component.measures,
+      metrics: response.data.metrics,
+    };
+  }
+
+  public async getMetrics(): Promise<any> {
+    // This function is not likely to be used in the extension
+    // However, it is included for the sake of completeness and
+    // the possibility of future use due to changing domain requirements
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+    const response = await axios.get(
+      `https://sonarcloud.io/api/metrics/search?f=name,description&ps=500`,
+      options
+    );
+
+    return response.data.metrics;
+  }
+
+  public async logout(): Promise<any> {
+    // SonarCloud does not logout explicitly
+    // Use this function to logout from the SonarCloud API
+    // Called from the function deactivate in the extension.ts file
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+    const response = await axios.post(
+      `https://sonarcloud.io/api/authentication/logout`,
+      {},
+      options
+    );
+
+    return response.data;
+  }
+
   private static getDirectorySize(directoryPath: string): number {
     let sizeInBytes = 0;
 
     const calculateSize = (filePath: string) => {
       const stats = fs.statSync(filePath);
-
       if (stats.isDirectory()) {
         fs.readdirSync(filePath).forEach((file) => {
           calculateSize(path.join(filePath, file));

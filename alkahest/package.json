@@ -20,6 +20,14 @@
       {
         "command": "alkahest.sonarQubeScan",
         "title": "SonarQube Scan"
+      },
+      {
+        "command": "alkahest.sonarQubeGetMeasures",
+        "title": "SonarQube Measures"
+      },
+      {
+        "command": "alkahest.sonarQubeLogout",
+        "title": "SonarQube Logout"
       }
     ]
   },
