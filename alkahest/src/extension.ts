@@ -63,10 +63,19 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  let sonarQubeGetDuplications = vscode.commands.registerCommand(
+    "alkahest.sonarQubeGetDuplications",
+    async () => {
+      const response = await sonarQube.getDuplications(); // Fetch the duplications from the SonarQube API
+      console.log(response);
+    }
+  );
+
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetMeasures); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeLogout); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeGetDuplications); // Add the command to the list of disposables
 }
 
 // This method is called when your extension is deactivated

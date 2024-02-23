@@ -28,6 +28,10 @@
       {
         "command": "alkahest.sonarQubeLogout",
         "title": "SonarQube Logout"
+      },
+      {
+        "command": "alkahest.sonarQubeGetDuplications",
+        "title": "SonarQube Duplications"
       }
     ]
   },

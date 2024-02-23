@@ -146,6 +146,25 @@ export default class SonarQube {
     return response.data.metrics;
   }
 
+  public async getDuplications(): Promise<any> {
+    // To get the duplications, the project key is used
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+    const response = await axios.get(
+      `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
+      &metricKeys=duplicated_blocks`,
+      options
+    );
+
+    return response.data;
+  }
+
   public async logout(): Promise<any> {
     // SonarCloud does not logout explicitly
     // Use this function to logout from the SonarCloud API
@@ -158,13 +177,16 @@ export default class SonarQube {
     };
 
     const axios = require("axios");
-    const response = await axios.post(
-      `https://sonarcloud.io/api/authentication/logout`,
-      {},
-      options
-    );
 
-    return response.data;
+    try {
+      await axios.post(
+        `https://sonarcloud.io/api/authentication/logout`,
+        {},
+        options
+      );
+    } catch (error: any) {
+      console.error(error.message);
+    }
   }
 
   private static getDirectorySize(directoryPath: string): number {
