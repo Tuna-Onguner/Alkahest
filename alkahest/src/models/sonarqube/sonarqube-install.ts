@@ -4,7 +4,7 @@ const packageName = "sonarqube-scanner";
 
 export function isPackageInstalled(): boolean {
   try {
-    execSync(`npm list -g ${packageName}`);
+    execSync(`npm list -g ${packageName}`, { stdio: 'inherit' });
     return true;
   } catch (error) {
     return false;
@@ -13,7 +13,7 @@ export function isPackageInstalled(): boolean {
 
 export function installPackage(): boolean {
   try {
-    execSync(`npm install -g ${packageName}`);
+    execSync(`npm install -g ${packageName}`, { stdio: 'inherit' });
     return true;
   } catch (error) {
     return false;

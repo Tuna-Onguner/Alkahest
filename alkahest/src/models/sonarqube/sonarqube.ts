@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
+import axios from "axios";
 
 import { window, workspace, ProgressLocation } from "vscode";
 import { isPackageInstalled, installPackage } from "./sonarqube-install";
 
-const defaultProjectEncoding = "UTF-8";
-const axios = require("axios");
+const defaultEncoding = "UTF-8";
+const defaultDesc = "Project scanned by Alkahest on ";
 
 export default class SonarQube {
   private projectKey: any; // Unique key to the project
@@ -13,28 +14,36 @@ export default class SonarQube {
   private projectEncoding: any; // Encoding of the project
   private SonarCloudToken: any; // The SonarCloud authentication token
   private projectDescription?: any; // Description of the project
-  private options: any; // Options for the API calls
+  private apiCallOptions: any; // Options for the API calls
 
   constructor(projectDescription?: string, projectEncoding?: string) {
     if (!isPackageInstalled()) {
+      // TODO: installPackage() function needs to be enhanced
+      // Right now, it is not asynchronous and does not return a promise
+      // This makes it difficult to handle the installation process
+      // The function should return a promise and should be awaited
       if (!installPackage()) {
         window.showErrorMessage(
           "SonarQube Scanner is not installed. Please install it manually before scanning."
         );
+
         throw new Error("SonarQube Scanner installation failed");
       }
     }
 
+    const now = new Date().toISOString().replace(/:/g, "-");
+
     this.SonarCloudToken = process.env.SONARCLOUD_TOKEN;
     this.organization = process.env.SONARCLOUD_ORGANIZATION;
-    this.projectEncoding = projectEncoding ?? defaultProjectEncoding;
-    this.projectDescription = projectDescription;
+    this.projectEncoding = projectEncoding ?? defaultEncoding;
+    this.projectDescription = projectDescription ?? defaultDesc.concat(now);
 
-    this.projectKey = workspace.workspaceFolders?.[0].name
+    this.projectKey = (workspace.workspaceFolders?.[0].name ?? "project")
       .replace(/ /g, "_")
-      .toLowerCase();
+      .toLowerCase()
+      .concat(":", now);
 
-    this.options = {
+    this.apiCallOptions = {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.SonarCloudToken}`,
@@ -42,41 +51,22 @@ export default class SonarQube {
     };
   }
 
-  private createPropertiesFile(): void {
-    const wsfs = workspace.workspaceFolders;
-    if (!wsfs) {
-      window.showErrorMessage("Please open a project before scanning");
-      throw new Error("No open projects");
-    }
+  private async createPropertiesFile(proPath: string): Promise<void> {
+    const propertiesFileContent = [
+      `sonar.host.url=https://sonarcloud.io/`,
+      `sonar.token=${this.SonarCloudToken}`,
+      `sonar.organization=${this.organization}`,
+      `sonar.projectKey=${this.projectKey}`,
+      `sonar.projectName=${this.projectKey.split(":")[0]}`,
+      `sonar.projectDescription=${this.projectDescription}`,
+      `sonar.sourceEncoding=${this.projectEncoding}`,
+      `sonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/test/**,**/tests/**,**/tmp/**,**/temp,.vscode/**,**/.vscode/**,**/.github/**,**/.git/**,**/.gitignore,**/.gitattributes,**/.gitmodules,**/.gitkeep`,
+    ];
 
-    const proPath = wsfs[0].uri.fsPath;
-    const propertiesFilePath = path.join(proPath, "sonar-project.properties");
-
-    let propertiesFileContent = `
-      sonar.host.url=https://sonarcloud.io/
-      sonar.token=${this.SonarCloudToken}
-      sonar.organization=${this.organization}
-      sonar.projectKey=${this.projectKey}
-      sonar.projectName=${this.projectKey.toUpperCase()}
-      sonar.sources=${proPath}
-      sonar.sourceEncoding=${this.projectEncoding}
-      sonar.exclusions=node_modules/**,dist/**,build/**,out/**,target/**,.vscode/**,.git/**,.idea/**,
-        .DS_Store,.gitignore,.gitattributes,.editorconfig,.eslintrc.js,.prettierrc.js,.prettierignore,
-        .vscodeignore,.vscode/settings.json,.vscode/launch.json,.vscode/tasks.json,.vscode/extensions.json,
-        .vscode/keybindings.json,.vscode/snippets/**,.vscode/remote-containers/**,.vscode/remote-data/**,
-        .vscode/remote-ssh/**,.vscode/remote-sync/**,.vscode/remote-wsl/**,.vscode-server/**,.vscode-test/**,
-        .vscode-webview/**,.vscode-workspace/**,.vscode-server-insiders/**,.vscode-server-insiders-test/**,
-        .vscode-server-oss/**,.vscode-server-oss-test/**,.vscode-server-test/**,.vscode-server-remote/**,
-        .vscode-server-remote-test/**,.vscode-server-remote-insiders/**,
-        .vscode-server-remote-insiders-test/**,.vscode-server-remote-oss/**,
-        .vscode-server-remote-oss-test/**,.vscode-server-remote-oss-insiders
-    `;
-
-    if (this.projectDescription) {
-      propertiesFileContent += `\nsonar.projectDescription=${this.projectDescription}`;
-    }
-
-    fs.writeFileSync(propertiesFilePath, propertiesFileContent);
+    fs.writeFileSync(
+      path.join(proPath, "sonar-project.properties"),
+      propertiesFileContent.join("\n")
+    );
   }
 
   public async scan(): Promise<any> {
@@ -104,10 +94,10 @@ export default class SonarQube {
           const options = { cwd: proPath, stdio: "inherit" };
           const command = "sonar-scanner";
 
-          this.createPropertiesFile();
+          await this.createPropertiesFile(proPath);
 
           const { spawn } = require("child_process");
-          const childProcess = spawn(command, options);
+          const childProcess = spawn(command, [], options);
 
           const progressInterval = setInterval(() => {
             if (progressValue < 90) {
@@ -147,7 +137,7 @@ export default class SonarQube {
       `https://sonarcloud.io/api/measures/component?component=${this.projectKey}
       &metricKeys=bugs,code_smells,vulnerabilities,duplicated_lines_density,ncloc,cognitive_complexity
       &additionalFields=metrics`,
-      this.options
+      this.apiCallOptions
     );
 
     return {
@@ -161,7 +151,7 @@ export default class SonarQube {
     const response = await axios.get(
       `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
       &metricKeys=duplicated_blocks`,
-      this.options
+      this.apiCallOptions
     );
 
     return response.data;
@@ -175,7 +165,7 @@ export default class SonarQube {
       await axios.post(
         `https://sonarcloud.io/api/authentication/logout`,
         {},
-        this.options
+        this.apiCallOptions
       );
     } catch (error: any) {
       console.error(error.message);
