@@ -11,7 +11,7 @@ export default class SonarCloudSecondarySidebarView {
     } else {
       SonarCloudSecondarySidebarView._panel = vscode.window.createWebviewPanel(
         "sonarCloudSecondarySidebarView",
-        "Aklahest",
+        "Alkahest",
         column,
         {
           enableScripts: true,
@@ -60,7 +60,7 @@ export default class SonarCloudSecondarySidebarView {
       const orng = "#E5682D"; // for severe levels of issues
       const redd = "#CC3333"; // for critical levels of issues
 
-      return yllw;
+      return [whte, grn1, grn2, yllw, orng, redd][Math.floor(Math.random() * 6)];
     }
 
     function getFullDescription(metric: string): any {
