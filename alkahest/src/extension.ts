@@ -66,8 +66,10 @@ export function activate(context: vscode.ExtensionContext) {
   let sonarQubeGetDuplications = vscode.commands.registerCommand(
     "alkahest.sonarQubeGetDuplications",
     async () => {
-      const response = await sonarQube.getDuplications(); // Fetch the duplications from the SonarQube API
-      console.log(response);
+      const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
+      const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
+      console.log(response.duplications); // Log the response to the console
+      console.log(response.files); // Log the response to the console
     }
   );
 

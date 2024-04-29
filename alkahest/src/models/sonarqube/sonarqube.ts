@@ -150,32 +150,54 @@ export default class SonarQube {
     };
   }
 
-  public async getDuplications(branchKey?: string, fileKey?: string): Promise<any> {
+  public async getFilesWithDuplicatedLines(): Promise<string[]> {
     try {
-        let url = 'https://sonarcloud.io/web_api/api/duplications/show?deprecated=false&section=params';
+        // Make a request to the API endpoint
+        const response = await axios.get(
+            // Query for duplicated_lines_density metric only
+            `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
+            &metricKeys=duplicated_lines_density`,
+            this.apiCallOptions
+        );
 
-        // Append branchKey and fileKey to URL if provided
-        if (branchKey && fileKey) {
-            url += `?branchKey=${branchKey}&fileKey=${fileKey}`;
-        }
+        const duplicatedFiles: string[] = [];
 
-        // Fetch duplications from the SonarQube API
-        const response = await axios.get(url, this.apiCallOptions);
+        // Process the response data
+        const components = response.data.components;
 
-        return response.data;
-    } catch (error) {
-        // Log detailed information about the error
-        console.error("Error fetching duplications:", error);
+        // Check each component to find files with duplicated lines
+        components.forEach((component: any) => {
+            // Check if the component has measures
+            if (component.measures) {
+                // Find the measure for duplicated lines density
+                const duplicatedLinesMeasure = component.measures.find((measure: any) => measure.metric === 'duplicated_lines_density');
+                
+                // Check if the measure exists and its value is greater than 0
+                if (duplicatedLinesMeasure && parseFloat(duplicatedLinesMeasure.value) > 0) {
+                    duplicatedFiles.push(component.path);
+                }
+            }
+        });
 
-        // Throw a custom error message to handle the 404 error
-        if ((error as any).response && (error as any).response.status === 404) {
-            throw new Error("Duplications not found for the project or branch.");
-        } else {
-            // Throw the original error if it's not a 404 error
-            throw error;
-        }
+        return duplicatedFiles;
+    } catch (error: any) {
+        console.error(error.message);
+        throw error;
     }
-  }
+}
+
+  public async getDuplications(filePath: Array<any>): Promise<any> {
+    const response = await axios.get(
+      `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
+      this.apiCallOptions
+    );
+
+    return {
+      duplications: response.data.duplications,
+      files: response.data.files,
+    };
+}
+
 
   public async logout(): Promise<any> {
     // SonarCloud does not logout explicitly
