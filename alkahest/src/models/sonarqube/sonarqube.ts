@@ -1,12 +1,16 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import * as vscode from "vscode";
 
 import { window, workspace, ProgressLocation } from "vscode";
 import { isPackageInstalled, installPackage } from "./sonarqube-install";
 
 const defaultEncoding = "UTF-8";
 const defaultDesc = "Project scanned by Alkahest on ";
+const decorationType = vscode.window.createTextEditorDecorationType({
+  backgroundColor: 'rgba(255, 0, 0, 0.3)'
+});
 
 export default class SonarQube {
   private projectKey: any; // Unique key to the project
@@ -146,15 +150,31 @@ export default class SonarQube {
     };
   }
 
-  public async getDuplications(): Promise<any> {
-    // To get the duplications, the project key is used
-    const response = await axios.get(
-      `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
-      &metricKeys=duplicated_blocks`,
-      this.apiCallOptions
-    );
+  public async getDuplications(branchKey?: string, fileKey?: string): Promise<any> {
+    try {
+        let url = 'https://sonarcloud.io/web_api/api/duplications/show?deprecated=false&section=params';
 
-    return response.data;
+        // Append branchKey and fileKey to URL if provided
+        if (branchKey && fileKey) {
+            url += `?branchKey=${branchKey}&fileKey=${fileKey}`;
+        }
+
+        // Fetch duplications from the SonarQube API
+        const response = await axios.get(url, this.apiCallOptions);
+
+        return response.data;
+    } catch (error) {
+        // Log detailed information about the error
+        console.error("Error fetching duplications:", error);
+
+        // Throw a custom error message to handle the 404 error
+        if ((error as any).response && (error as any).response.status === 404) {
+            throw new Error("Duplications not found for the project or branch.");
+        } else {
+            // Throw the original error if it's not a 404 error
+            throw error;
+        }
+    }
   }
 
   public async logout(): Promise<any> {
