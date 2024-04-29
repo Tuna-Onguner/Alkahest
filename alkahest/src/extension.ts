@@ -5,6 +5,7 @@ import * as dotenv from "dotenv"; // The module 'dotenv' is used to load environ
 import GeminiAI from "./models/gemini-ai/gemini-ai";
 import SonarQube from "./models/sonarqube/sonarqube";
 import SonarCloudSecondarySidebarView from "./views/views/sonarcloud-ssv";
+import SonarQubeDuplicatedLines from "./views/views/sonarqube-dlv";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -67,9 +68,10 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeGetDuplications",
     async () => {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
-      const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
-      console.log(response.duplications); // Log the response to the console
-      console.log(response.files); // Log the response to the console
+      SonarQubeDuplicatedLines.createOrShow(context); // Create or show the webview panel
+      SonarQubeDuplicatedLines.update(filePath); // Update the webview panel with the duplicated files
+      //const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
+      //console.log(response.filePathsAndDuplicationLines); // Log the response to the console
     }
   );
 

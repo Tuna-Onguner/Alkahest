@@ -174,7 +174,7 @@ export default class SonarQube {
                 
                 // Check if the measure exists and its value is greater than 0
                 if (duplicatedLinesMeasure && parseFloat(duplicatedLinesMeasure.value) > 0) {
-                    duplicatedFiles.push(component.path);
+                    duplicatedFiles.push(component.key);
                 }
             }
         });
@@ -186,17 +186,51 @@ export default class SonarQube {
     }
 }
 
-  public async getDuplications(filePath: Array<any>): Promise<any> {
-    const response = await axios.get(
-      `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
-      this.apiCallOptions
-    );
+public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]: number[] }> {
+  try {
+      const allDuplications: any[] = [];
+      const allFiles: any = {};
 
-    return {
-      duplications: response.data.duplications,
-      files: response.data.files,
-    };
+      // Iterate over each file path
+      for (const filePath of filePaths) {
+          const response = await axios.get(
+              `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
+              this.apiCallOptions
+          );
+
+          // Add duplications and files information to the respective arrays
+          allDuplications.push(...response.data.duplications);
+          Object.assign(allFiles, response.data.files);
+      }
+
+      // Initialize a hashmap to store file paths and their duplicated lines
+      const filePathsAndDuplicationLines: { [filePath: string]: number[] } = {};
+
+      // Process the duplications to extract duplicated lines for each file
+      allDuplications.forEach((duplication: any) => {
+          const blocks = duplication.blocks;
+          const filePath = allFiles[duplication.blocks[0]._ref].key;
+
+          // Initialize an array to store duplicated lines for the current file
+          if (!filePathsAndDuplicationLines[filePath]) {
+              filePathsAndDuplicationLines[filePath] = [];
+          }
+
+          // Add duplicated lines to the array
+          blocks.forEach((block: any) => {
+              for (let i = block.from; i < block.from + block.size; i++) {
+                  filePathsAndDuplicationLines[filePath].push(i);
+              }
+          });
+      });
+
+      return filePathsAndDuplicationLines;
+  } catch (error: any) {
+      console.error(error.message);
+      throw error;
+  }
 }
+
 
 
   public async logout(): Promise<any> {
