@@ -70,8 +70,9 @@ export function activate(context: vscode.ExtensionContext) {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
       SonarQubeDuplicatedLines.createOrShow(context); // Create or show the webview panel
       SonarQubeDuplicatedLines.update(filePath); // Update the webview panel with the duplicated files
-      //const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
-      //console.log(response.filePathsAndDuplicationLines); // Log the response to the console
+      const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
+      sonarQube.highlightDuplicatedLines(response); // Highlight the duplicated lines in the editor
+      console.log(response); // Log the response to the console
     }
   );
 

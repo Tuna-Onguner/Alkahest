@@ -231,6 +231,53 @@ public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]:
   }
 }
 
+public highlightDuplicatedLines(duplications: { [filePath: string]: number[] }): void {
+    let editor = vscode.window.activeTextEditor;
+
+    // If no active text editor, create and open a new document
+    if (!editor) {
+        vscode.workspace.openTextDocument().then((document) => {
+            vscode.window.showTextDocument(document);
+            editor = vscode.window.activeTextEditor;
+
+            // Apply decorations to the newly opened editor
+            this.applyDecorations(editor, duplications);
+        });
+    } else {
+        // Apply decorations to the active editor
+        this.applyDecorations(editor, duplications);
+    }
+}
+
+private applyDecorations(editor: vscode.TextEditor | undefined, duplications: { [filePath: string]: number[] }): void {
+    if (editor) {
+        const duplicatedFiles = Object.keys(duplications);
+        
+        duplicatedFiles.forEach(filePath => {
+            const duplicatedLines = duplications[filePath];
+            const decorationOptions: vscode.DecorationOptions[] = duplicatedLines.map(line => ({
+                range: new vscode.Range(new vscode.Position(line - 1, 0), new vscode.Position(line - 1, 0)),
+                renderOptions: {
+                    // You can customize the decoration style here
+                    after: {
+                     
+                        contentText: "  // Duplicated line",
+                        color: "rgba(255, 0, 0, 0.6)"
+                    }
+                }
+            }));
+
+            editor?.setDecorations(decorationType, decorationOptions);
+        });
+    } else {
+        vscode.window.showErrorMessage("No active text editor found.");
+    }
+}
+
+
+
+
+
 
 
   public async logout(): Promise<any> {
