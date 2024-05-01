@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 
+import { execSync } from "child_process";
 import { window, workspace, ProgressLocation } from "vscode";
-import { isPackageInstalled, installPackage } from "./sonarqube-install";
+
+const packageName = "sonarqube-scanner";
 
 const defaultEncoding = "UTF-8";
 const defaultDesc = "Project scanned by Alkahest on ";
@@ -11,18 +13,33 @@ const defaultDesc = "Project scanned by Alkahest on ";
 export default class SonarQube {
   private projectKey: any; // Unique key to the project
   private organization: any; // Unique organization of the user
+  private isScannedOnce: any; // Check if the project is scanned before
+  private apiCallOptions: any; // Options for the API calls
   private projectEncoding: any; // Encoding of the project
   private SonarCloudToken: any; // The SonarCloud authentication token
   private projectDescription?: any; // Description of the project
-  private apiCallOptions: any; // Options for the API calls
+
+  private static isPackageInstalled(): boolean {
+    try {
+      execSync(`npm list -g ${packageName}`, { stdio: "inherit" });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private static installPackage(): boolean {
+    try {
+      execSync(`npm install -g ${packageName}`, { stdio: "inherit" });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
   constructor(projectDescription?: string, projectEncoding?: string) {
-    if (!isPackageInstalled()) {
-      // TODO: installPackage() function needs to be enhanced
-      // Right now, it is not asynchronous and does not return a promise
-      // This makes it difficult to handle the installation process
-      // The function should return a promise and should be awaited
-      if (!installPackage()) {
+    if (!SonarQube.isPackageInstalled()) {
+      if (!SonarQube.installPackage()) {
         window.showErrorMessage(
           "SonarQube Scanner is not installed. Please install it manually before scanning."
         );
@@ -33,6 +50,7 @@ export default class SonarQube {
 
     const now = new Date().toISOString().replace(/:/g, "-");
 
+    this.isScannedOnce = this.isScannedBefore();
     this.SonarCloudToken = process.env.SONARCLOUD_TOKEN;
     this.organization = process.env.SONARCLOUD_ORGANIZATION;
     this.projectEncoding = projectEncoding ?? defaultEncoding;
@@ -49,6 +67,55 @@ export default class SonarQube {
         Authorization: `Bearer ${this.SonarCloudToken}`,
       },
     };
+  }
+
+  private async isPropertiesFilePresent(): Promise<boolean> {
+    const rootPath = workspace.workspaceFolders?.[0].uri.fsPath;
+
+    if (!rootPath) {
+      return false;
+    }
+
+    const files = fs.readdirSync(rootPath);
+    return files.some((file) => file === "sonar-project.properties");
+  }
+
+  private async getProjectKey(): Promise<string | undefined> {
+    if (await this.isPropertiesFilePresent()) {
+      const rootPath = workspace.workspaceFolders?.[0].uri.fsPath;
+
+      if (!rootPath) {
+        return undefined;
+      }
+
+      const propertiesFile = fs.readFileSync(
+        path.join(rootPath!, "sonar-project.properties"),
+        "utf-8"
+      );
+
+      const projectKey = propertiesFile
+        .split("\n")
+        .find((line) => line.startsWith("sonar.projectKey"));
+
+      return projectKey?.split("=")[1].trim() ?? undefined;
+    }
+
+    return undefined;
+  }
+
+  public async isScannedBefore(): Promise<boolean> {
+    const projectKey = await this.getProjectKey();
+
+    if (!projectKey) {
+      return false;
+    }
+
+    const response = await axios.get(
+      `https://sonarcloud.io/api/projects/search?organization=${this.organization}&q=${projectKey}`,
+      this.apiCallOptions
+    );
+
+    return response.data.components.length > 0;
   }
 
   private async createPropertiesFile(proPath: string): Promise<void> {
@@ -70,13 +137,30 @@ export default class SonarQube {
   }
 
   public async scan(): Promise<any> {
+    if (this.isScannedOnce) {
+      const confirmRescan = async () => {
+        const userResponse = await window.showInformationMessage(
+          "Your project is already scanned once. Would you like to re-scan?",
+          { modal: true },
+          "Yes",
+          "No"
+        );
+
+        return userResponse === "Yes";
+      };
+
+      if (!(await confirmRescan())) {
+        return;
+      }
+    }
+
     return window.withProgress(
       {
         location: ProgressLocation.Notification,
         title: "Scanning your project",
-        cancellable: false,
+        cancellable: true,
       },
-      async (progress) => {
+      async (progress, token) => {
         let progressValue = 0;
         progress.report({ increment: progressValue });
 
@@ -89,15 +173,26 @@ export default class SonarQube {
 
           const proPath = wsfs[0].uri.fsPath;
           const proSize = SonarQube.getDirectorySize(proPath); // in MB
-          const msPerMB = 1000;
+          const msPerMB = 1220;
 
           const options = { cwd: proPath, stdio: "inherit" };
           const command = "sonar-scanner";
 
-          await this.createPropertiesFile(proPath);
+          if (!(await this.isPropertiesFilePresent())) {
+            await this.createPropertiesFile(proPath);
+          }
 
           const { spawn } = require("child_process");
           const childProcess = spawn(command, [], options);
+
+          // Track cancellation event
+          token.onCancellationRequested(() => {
+            if (childProcess && !childProcess.killed) {
+              childProcess.kill(); // Kill the child process on cancellation
+            }
+            clearInterval(progressInterval);
+            window.showWarningMessage("Scanning canceled by user");
+          });
 
           const progressInterval = setInterval(() => {
             if (progressValue < 90) {
@@ -134,8 +229,8 @@ export default class SonarQube {
     const response = await axios.get(
       // The necessary metrics are hardcoded in the URL
       // They can be changed according to the requirements if needed
-      `https://sonarcloud.io/api/measures/component?component=${this.projectKey}
-      &metricKeys=bugs,code_smells,vulnerabilities,duplicated_lines_density,ncloc,cognitive_complexity
+      `https://sonarcloud.io/api/measures/component?component=${await this.getProjectKey()}
+      &metricKeys=lines,bugs,code_smells,vulnerabilities,duplicated_lines_density,ncloc,cognitive_complexity
       &additionalFields=metrics`,
       this.apiCallOptions
     );
@@ -149,7 +244,7 @@ export default class SonarQube {
   public async getDuplications(): Promise<any> {
     // To get the duplications, the project key is used
     const response = await axios.get(
-      `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
+      `https://sonarcloud.io/api/measures/component_tree?component=${await this.getProjectKey()}
       &metricKeys=duplicated_blocks`,
       this.apiCallOptions
     );

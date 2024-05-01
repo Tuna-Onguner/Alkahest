@@ -46,13 +46,14 @@ export default class SonarCloudSecondarySidebarView {
 
     function isFloat(value: any): boolean {
       // Convert the value to a number if it's a string
-      const num = typeof value === 'string' ? Number(value) : value;
-    
+      const num = typeof value === "string" ? Number(value) : value;
+
       // Check if it's a valid number and has a decimal part
-      return typeof num === 'number' && num === num && num % 1 !== 0;
+      return typeof num === "number" && num === num && num % 1 !== 0;
     }
 
-    function chooseColor(value: number) {
+    function chooseColor(value: number): string {
+
       const whte = "#F9F6EE"; // for no issues at all
       const grn1 = "#339966"; // for basic levels of issues
       const grn2 = "#669900"; // for intermediate levels of issues
@@ -60,21 +61,40 @@ export default class SonarCloudSecondarySidebarView {
       const orng = "#E5682D"; // for severe levels of issues
       const redd = "#CC3333"; // for critical levels of issues
 
-      return [whte, grn1, grn2, yllw, orng, redd][Math.floor(Math.random() * 6)];
+      if (value === 0) {
+        return whte;
+      } else if (value <= 5) {
+        return grn1;
+      } else if (value <= 10) {
+        return grn2;
+      } else if (value <= 15) {
+        return yllw;
+      } else if (value <= 20) {
+        return orng;
+      } else {
+        return redd;
+      }
     }
 
     function getFullDescription(metric: string): any {
       const fullDescriptions: any = {
-        "bugs": "A coding error that will break your code and needs to be fixed immediately.",
-        "code_smells": "Code that is confusing and difficult to maintain.",
-        "duplicated_lines_density": "Identical lines of code.",
-        "ncloc": "The number of non-commented lines of code in the project.",
-        "vulnerabilities": "Code that can be exploited by hackers.",
-        "cognitive_complexity": "A measure of how difficult the application is to understand.",
-        //"cyclomatic_complexity": "Measurement of the minimum number of test cases required for full test coverage.", Not working
+        bugs: "A coding error that will break your code and needs to be fixed immediately.",
+        code_smells: "Code that is confusing and difficult to maintain.",
+        duplicated_lines_density: "Identical lines of code.",
+        ncloc: "The number of non-commented lines of code in the project.",
+        vulnerabilities: "Code that can be exploited by hackers.",
+        cognitive_complexity: "A measure of how difficult the application is to understand.",
       };
 
       return fullDescriptions[metric];
+    }
+
+    let lines = 0;
+    for (let i = 0; i < metrics.length; i++) {
+      if (measures[i].metric === "lines") {
+        lines = measures[i].value;
+        break;
+      }
     }
 
     let tableRows = "";
@@ -85,13 +105,26 @@ export default class SonarCloudSecondarySidebarView {
       const title = titleCase(metric.replace(/_/g, " "));
       const fullDescription = getFullDescription(metric);
 
+      if (metric === "lines") {
+        continue;
+      }
+
+      let percantage_value = value;
+      if (metric !== "duplicated_lines_density") {
+        percantage_value = (value / lines) * 100;
+      }
+
       tableRows += `
         <tr>
           <td>
             <svg width="100" height="100">
-              <circle cx="50" cy="50" r="${(radius + 3)}" fill="white"/>
-              <circle cx="50" cy="50" r="${radius}" fill="${chooseColor(value)}"/>
-              <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" fill="black">${value}${isFloat(value) ? "%" : ""}</text>
+              <circle cx="50" cy="50" r="${radius + 3}" fill="white"/>
+              <circle cx="50" cy="50" r="${radius}" fill="${chooseColor(
+        percantage_value
+      )}"/>
+              <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" fill="black">${value}${
+        isFloat(value) ? "%" : ""
+      }</text>
             </svg>
           </td>
           <td>
@@ -100,9 +133,9 @@ export default class SonarCloudSecondarySidebarView {
           </td>
         </tr>
       `;
-  }
-  
-  return `
+    }
+
+    return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -111,10 +144,11 @@ export default class SonarCloudSecondarySidebarView {
           name="viewport"
           content="width=device-width, initial-scale=1.0"
         />
-        <title>Aklahest</title>
+        <title>Alkahest</title>
       </head>
       <body>
         <h1>SonarCloud Measures</h1>
+        <h2>Total Lines of Code Scanned: ${lines}</h2>
         <table>
           ${tableRows}
         </table>
