@@ -39,6 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
   let sonarQubeScan = vscode.commands.registerCommand(
     "alkahest.sonarQubeScan",
     async () => {
+      //console.log("changes seen");
       await sonarQube.scan(); // Fetch the response from the SonarQube API
       // Execute the command to get the measures from the SonarQube API
       vscode.commands.executeCommand("alkahest.sonarQubeGetMeasures");
