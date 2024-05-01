@@ -13,6 +13,9 @@ const decorationType = vscode.window.createTextEditorDecorationType({
 });
 
 export default class SonarQube {
+  static highlightDuplicatedLinesForFile(filePath: any, duplications: { [filePath: string]: number[]; }) {
+    throw new Error("Method not implemented.");
+  }
   private projectKey: any; // Unique key to the project
   private organization: any; // Unique organization of the user
   private projectEncoding: any; // Encoding of the project
@@ -188,94 +191,57 @@ export default class SonarQube {
 
 public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]: number[] }> {
   try {
-      const allDuplications: any[] = [];
-      const allFiles: any = {};
+    const allDuplications: any[] = [];
+    const allFiles: any = {};
 
-      // Iterate over each file path
-      for (const filePath of filePaths) {
-          const response = await axios.get(
-              `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
-              this.apiCallOptions
-          );
+    // Iterate over each file path
+    for (const filePath of filePaths) {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
+        this.apiCallOptions
+      );
 
-          // Add duplications and files information to the respective arrays
-          allDuplications.push(...response.data.duplications);
-          Object.assign(allFiles, response.data.files);
-      }
+      // Add duplications and files information to the respective arrays
+      allDuplications.push(...response.data.duplications);
+      Object.assign(allFiles, response.data.files);
+    }
 
-      // Initialize a hashmap to store file paths and their duplicated lines
-      const filePathsAndDuplicationLines: { [filePath: string]: number[] } = {};
+    // Initialize a hashmap to store file paths and their duplicated lines
+    const filePathsAndDuplicationLines: { [filePath: string]: number[] } = {};
 
-      // Process the duplications to extract duplicated lines for each file
-      allDuplications.forEach((duplication: any) => {
-          const blocks = duplication.blocks;
-          const filePath = allFiles[duplication.blocks[0]._ref].key;
+    // Iterate over each duplication
+    for (const duplication of allDuplications) {
+      // Iterate over each block in the duplication
+      for (const block of duplication.blocks) {
+        // Get the file key referenced by the block
+        const fileKey = block._ref;
 
-          // Initialize an array to store duplicated lines for the current file
-          if (!filePathsAndDuplicationLines[filePath]) {
-              filePathsAndDuplicationLines[filePath] = [];
+        // Get the file path corresponding to the file key
+        const filePath = allFiles[fileKey].key;
+
+        // If the file path is not in the hashmap, initialize it with an empty array
+        if (!filePathsAndDuplicationLines[filePath]) {
+          filePathsAndDuplicationLines[filePath] = [];
+        }
+
+        // Add the duplicated lines from the block to the corresponding file path
+        const from = block.from; // Starting line of the duplicated block
+        const to = block.from + block.size - 1; // Ending line of the duplicated block
+        for (let i = from; i <= to; i++) {
+          // Check if the line number already exists in the array
+          if (!filePathsAndDuplicationLines[filePath].includes(i)) {
+            filePathsAndDuplicationLines[filePath].push(i);
           }
+        }
+      }
+    }
 
-          // Add duplicated lines to the array
-          blocks.forEach((block: any) => {
-              for (let i = block.from; i < block.from + block.size; i++) {
-                  filePathsAndDuplicationLines[filePath].push(i);
-              }
-          });
-      });
-
-      return filePathsAndDuplicationLines;
+    return filePathsAndDuplicationLines;
   } catch (error: any) {
-      console.error(error.message);
-      throw error;
+    console.error(error.message);
+    throw error;
   }
 }
-
-public highlightDuplicatedLines(duplications: { [filePath: string]: number[] }): void {
-    let editor = vscode.window.activeTextEditor;
-
-    // If no active text editor, create and open a new document
-    if (!editor) {
-        vscode.workspace.openTextDocument().then((document) => {
-            vscode.window.showTextDocument(document);
-            editor = vscode.window.activeTextEditor;
-
-            // Apply decorations to the newly opened editor
-            this.applyDecorations(editor, duplications);
-        });
-    } else {
-        // Apply decorations to the active editor
-        this.applyDecorations(editor, duplications);
-    }
-}
-
-private applyDecorations(editor: vscode.TextEditor | undefined, duplications: { [filePath: string]: number[] }): void {
-    if (editor) {
-        const duplicatedFiles = Object.keys(duplications);
-        
-        duplicatedFiles.forEach(filePath => {
-            const duplicatedLines = duplications[filePath];
-            const decorationOptions: vscode.DecorationOptions[] = duplicatedLines.map(line => ({
-                range: new vscode.Range(new vscode.Position(line - 1, 0), new vscode.Position(line - 1, 0)),
-                renderOptions: {
-                    // You can customize the decoration style here
-                    after: {
-                     
-                        contentText: "  // Duplicated line",
-                        color: "rgba(255, 0, 0, 0.6)"
-                    }
-                }
-            }));
-
-            editor?.setDecorations(decorationType, decorationOptions);
-        });
-    } else {
-        vscode.window.showErrorMessage("No active text editor found.");
-    }
-}
-
-
-
 
 
 

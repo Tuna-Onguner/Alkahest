@@ -68,10 +68,9 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeGetDuplications",
     async () => {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
-      SonarQubeDuplicatedLines.createOrShow(context); // Create or show the webview panel
-      SonarQubeDuplicatedLines.update(filePath); // Update the webview panel with the duplicated files
       const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
-      sonarQube.highlightDuplicatedLines(response); // Highlight the duplicated lines in the editor
+      SonarQubeDuplicatedLines.createOrShow(context,response); // Create or show the webview panel
+      SonarQubeDuplicatedLines.update(filePath); // Update the webview panel with the duplicated files
       console.log(response); // Log the response to the console
     }
   );
