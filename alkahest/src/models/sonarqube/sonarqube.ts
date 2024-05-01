@@ -11,12 +11,12 @@ const defaultEncoding = "UTF-8";
 const defaultDesc = "Project scanned by Alkahest on ";
 
 export default class SonarQube {
+  private SCToken: any; // The SonarCloud authentication token
   private projectKey: any; // Unique key to the project
   private organization: any; // Unique organization of the user
   private isScannedOnce: any; // Check if the project is scanned before
   private apiCallOptions: any; // Options for the API calls
   private projectEncoding: any; // Encoding of the project
-  private SonarCloudToken: any; // The SonarCloud authentication token
   private projectDescription?: any; // Description of the project
 
   private static isPackageInstalled(): boolean {
@@ -162,7 +162,7 @@ export default class SonarQube {
       },
       async (progress, token) => {
         let progressValue = 0;
-        progress.report({ increment: progressValue });
+        progress.report({ increment: 0 });
 
         try {
           const wsfs = workspace.workspaceFolders;
@@ -226,6 +226,14 @@ export default class SonarQube {
   }
 
   public async getMeasures(): Promise<any> {
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
     const response = await axios.get(
       // The necessary metrics are hardcoded in the URL
       // They can be changed according to the requirements if needed
@@ -241,8 +249,36 @@ export default class SonarQube {
     };
   }
 
+  public async getMetrics(): Promise<any> {
+    // This function is not likely to be used in the extension
+    // However, it is included for the sake of completeness and
+    // the possibility of future use due to changing domain requirements
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+    const response = await axios.get(
+      `https://sonarcloud.io/api/metrics/search?f=name,description&ps=500`,
+      options
+    );
+
+    return response.data.metrics;
+  }
+
   public async getDuplications(): Promise<any> {
     // To get the duplications, the project key is used
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
     const response = await axios.get(
       `https://sonarcloud.io/api/measures/component_tree?component=${await this.getProjectKey()}
       &metricKeys=duplicated_blocks`,
@@ -256,6 +292,15 @@ export default class SonarQube {
     // SonarCloud does not logout explicitly
     // Use this function to logout from the SonarCloud API
     // Called from the function deactivate in the extension.ts file
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.SCToken}`,
+      },
+    };
+
+    const axios = require("axios");
+
     try {
       await axios.post(
         `https://sonarcloud.io/api/authentication/logout`,
