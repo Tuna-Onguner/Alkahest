@@ -3,9 +3,8 @@ import * as vscode from "vscode";
 export default class SonarQubeDuplicatedLines {
   private static _panel: vscode.WebviewPanel | undefined;
 
-  public static createOrShow(context: vscode.ExtensionContext, duplications: { [filePath: string]: number[] }): void {
+  public static createOrShow(context: vscode.ExtensionContext, duplications: { [filePath: string]: number[] },keys: string[]): void {
     const column = vscode.ViewColumn.Two;
-
     if (SonarQubeDuplicatedLines._panel) {
       SonarQubeDuplicatedLines._panel.reveal(column);
     } else {
@@ -25,19 +24,29 @@ export default class SonarQubeDuplicatedLines {
         null,
         context.subscriptions
       );
-
       // Handle messages from the webview
       SonarQubeDuplicatedLines._panel.webview.onDidReceiveMessage(
         message => {
           // Open the file when a path is clicked
           (async () => {
-            try {
-              await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(message.filePath));
-              // Highlight duplicated lines when a path is clicked
-              // KEY IS NOT MATCHED IN DUPLICATIONS
-              await SonarQubeDuplicatedLines.highlightDuplicatedLines(message.filePath, duplications[message.filePath]);
-            } catch (err) {
-              console.error(err);
+            const { filePaths } = SonarQubeDuplicatedLines.getFilePathsFromKeys(keys, duplications);
+      
+            const index = filePaths.findIndex(filePath => message.filePath.includes(filePath));
+      
+            if (index !== -1) {
+              const filePath = filePaths[index]; // Get the corresponding file path
+              const duplicationKey = Object.keys(duplications)[index]; // Get the key corresponding to the file path
+              const duplicationLines = duplications[duplicationKey]; // Get the duplicated lines for the key
+      
+              try {
+                await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(message.filePath));
+                // Highlight duplicated lines when a path is clicked
+                await SonarQubeDuplicatedLines.highlightDuplicatedLines(message.filePath, duplicationLines);
+              } catch (err) {
+                console.error(err);
+              }
+            } else {
+              console.error(`message.filePath doesn't include any filePath item.`);
             }
           })();
         },
@@ -47,28 +56,37 @@ export default class SonarQubeDuplicatedLines {
     }
   }
 
-  public static update(duplicatedKeys: string[]): void {
-    const duplicatedPaths = SonarQubeDuplicatedLines.getFilePathsFromKeys(duplicatedKeys);
+  public static update(duplicatedKeys: string[],duplications: { [filePath: string]: number[] }): void {
+    const { fullPaths } = SonarQubeDuplicatedLines.getFilePathsFromKeys(duplicatedKeys,duplications); // Destructure fullPaths from the returned object
     if (SonarQubeDuplicatedLines._panel) {
-      SonarQubeDuplicatedLines._panel.webview.html = SonarQubeDuplicatedLines._getWebviewContent(duplicatedPaths);
+      SonarQubeDuplicatedLines._panel.webview.html = SonarQubeDuplicatedLines._getWebviewContent(fullPaths); // Pass fullPaths instead of duplicatedPaths
     }
   }
+  
 
-  public static getFilePathsFromKeys(keys: string[]): string[] {
-    const filePaths: string[] = [];
-    keys.forEach(key => {
-      const parts = key.split(":");
-      if (parts.length === 3) {
-        const filePath = parts[2];
+public static getFilePathsFromKeys(keys: string[], duplications: { [filePath: string]: number[] }): { filePaths: string[], fullPaths: string[] } {
+  const fullPaths: string[] = [];
+  const filePaths: string[] = [];
+  const duplicatedKeysArray = Object.keys(duplications);
+
+  keys.forEach(key => {
+    const parts = key.split(":");
+    if (parts.length === 3) {
+      const filePath = parts[2];
+      // Check if the filePath is present in duplicatedKeysArray
+      if (duplicatedKeysArray.includes(filePath)) {
         const fullPath = vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, filePath).fsPath;
-
-        filePaths.push(fullPath);
-      } else {
-        console.error(`Invalid file key: ${key}`);
+        fullPaths.push(fullPath);
+        filePaths.push(filePath);
       }
-    });
-    return filePaths;
-  }
+    } else {
+      console.error(`Invalid file key: ${key}`);
+    }
+  });
+  return { filePaths, fullPaths };
+}
+
+  
 
   private static _getWebviewContent(duplicatedPaths: string[]): string {
     let listItems = "";
