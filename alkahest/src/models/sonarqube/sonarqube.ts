@@ -5,6 +5,11 @@ import * as vscode from "vscode";
 
 import { window, workspace, ProgressLocation } from "vscode";
 import { isPackageInstalled, installPackage } from "./sonarqube-install";
+interface File {
+  key: string;
+  name: string;
+  projectName: string;
+}
 
 const defaultEncoding = "UTF-8";
 const defaultDesc = "Project scanned by Alkahest on ";
@@ -192,20 +197,50 @@ export default class SonarQube {
 public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]: number[] }> {
   try {
     const allDuplications: any[] = [];
-    const allFiles: any = {};
+    const allFiles: { [key: string]: File } = {};
 
     // Iterate over each file path
     for (const filePath of filePaths) {
       const response = await axios.get(
-        `https://sonarcloud.io/api/duplications/show?key=${filePath}`,
+        `https://sonarcloud.io/api/duplications/show?key=${encodeURIComponent(filePath)}`,
         this.apiCallOptions
       );
 
-      // Add duplications and files information to the respective arrays
+      // Add duplications from the response to the allDuplications array
       allDuplications.push(...response.data.duplications);
-      Object.assign(allFiles, response.data.files);
-    }
+      // Iterate over files in the response
+      for (const fileKey of Object.keys(response.data.files)) {
+        const file = response.data.files[fileKey];
+        // Add file to allFiles if it doesn't exist
+        if (!allFiles[file.key]) {
+          const filePath = file.key.split(":").slice(2).join(":"); // Extracting from the third segment onward
+          // Add file to allFiles if it doesn't exist
+          if (!allFiles[filePath]) {
+            allFiles[filePath] = file;
+          }
+        }
+      }
 
+
+      // Update block references to use file name instead of _ref
+      for (const duplication of response.data.duplications) {
+        for (const block of duplication.blocks) {
+          // Get the file key referenced by the block
+          const fileKey = block._ref;
+
+          // Find the corresponding file object
+          const correspondingFile = response.data.files[fileKey];
+
+          if (!correspondingFile) {
+            console.error(`File with key ${fileKey} not found.`);
+            continue;
+          }
+
+          // Update the block reference to use file name
+          block._ref = correspondingFile.name;
+        }
+      }
+  }
     // Initialize a hashmap to store file paths and their duplicated lines
     const filePathsAndDuplicationLines: { [filePath: string]: number[] } = {};
 
@@ -216,12 +251,9 @@ public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]:
         // Get the file key referenced by the block
         const fileKey = block._ref;
 
-        // Get the file path corresponding to the file key
-        const filePath = allFiles[fileKey].key;
-
         // If the file path is not in the hashmap, initialize it with an empty array
-        if (!filePathsAndDuplicationLines[filePath]) {
-          filePathsAndDuplicationLines[filePath] = [];
+        if (!filePathsAndDuplicationLines[fileKey]) {
+          filePathsAndDuplicationLines[fileKey] = [];
         }
 
         // Add the duplicated lines from the block to the corresponding file path
@@ -229,8 +261,8 @@ public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]:
         const to = block.from + block.size - 1; // Ending line of the duplicated block
         for (let i = from; i <= to; i++) {
           // Check if the line number already exists in the array
-          if (!filePathsAndDuplicationLines[filePath].includes(i)) {
-            filePathsAndDuplicationLines[filePath].push(i);
+          if (!filePathsAndDuplicationLines[fileKey].includes(i)) {
+            filePathsAndDuplicationLines[fileKey].push(i);
           }
         }
       }
@@ -242,6 +274,7 @@ public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]:
     throw error;
   }
 }
+
 
 
 

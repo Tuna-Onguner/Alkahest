@@ -34,6 +34,7 @@ export default class SonarQubeDuplicatedLines {
             try {
               await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(message.filePath));
               // Highlight duplicated lines when a path is clicked
+              // KEY IS NOT MATCHED IN DUPLICATIONS
               await SonarQubeDuplicatedLines.highlightDuplicatedLines(message.filePath, duplications[message.filePath]);
             } catch (err) {
               console.error(err);
