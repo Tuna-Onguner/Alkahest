@@ -10,6 +10,15 @@ export default class SonarCloudSecondarySidebarView {
     orng: "#E5682D",
     red_: "#CC3333",
   };
+  private static readonly _metricDescriptions: { [key: string]: string } = {
+    bugs: "A coding error that will break your code and needs to be fixed immediately.",
+    code_smells: "Code that is confusing and difficult to maintain.",
+    duplicated_lines_density: "Identical lines of code.",
+    ncloc: "The number of non-commented lines of code in the project.",
+    vulnerabilities: "Code that can be exploited by hackers.",
+    cognitive_complexity:
+      "A measure of how difficult the application is to understand.",
+  };
 
   public static createOrShow(context: vscode.ExtensionContext): void {
     const column = vscode.ViewColumn.Two;
@@ -78,20 +87,6 @@ export default class SonarCloudSecondarySidebarView {
       }
     }
 
-    function getFullDescription(metric: string): any {
-      const fullDescriptions: { [key: string]: string } = {
-        bugs: "A coding error that will break your code and needs to be fixed immediately.",
-        code_smells: "Code that is confusing and difficult to maintain.",
-        duplicated_lines_density: "Identical lines of code.",
-        ncloc: "The number of non-commented lines of code in the project.",
-        vulnerabilities: "Code that can be exploited by hackers.",
-        cognitive_complexity:
-          "A measure of how difficult the application is to understand.",
-      };
-
-      return fullDescriptions[metric] || "";
-    }
-
     let lines = 0;
     for (let i = 0; i < metrics.length; i++) {
       if (measures[i].metric === "lines") {
@@ -106,7 +101,8 @@ export default class SonarCloudSecondarySidebarView {
       const value = measures[i].value;
       const metric = measures[i].metric;
       const title = titleCase(metric.replace(/_/g, " "));
-      const fullDescription = getFullDescription(metric);
+      const fullDescription =
+        SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
 
       if (metric === "lines") {
         continue;
