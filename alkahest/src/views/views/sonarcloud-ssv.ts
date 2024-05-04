@@ -2,6 +2,14 @@ import * as vscode from "vscode";
 
 export default class SonarCloudSecondarySidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
+  private static readonly _colors: { [key: string]: string } = {
+    whte: "#F9F6EE",
+    grn1: "#339966",
+    grn2: "#669900",
+    yllw: "#FDDA0D",
+    orng: "#E5682D",
+    red_: "#CC3333",
+  };
 
   public static createOrShow(context: vscode.ExtensionContext): void {
     const column = vscode.ViewColumn.Two;
@@ -53,40 +61,35 @@ export default class SonarCloudSecondarySidebarView {
     }
 
     function chooseColor(value: number): string {
-
-      const whte = "#F9F6EE"; // for no issues at all
-      const grn1 = "#339966"; // for basic levels of issues
-      const grn2 = "#669900"; // for intermediate levels of issues
-      const yllw = "#FDDA0D"; // for advanced levels of issues
-      const orng = "#E5682D"; // for severe levels of issues
-      const redd = "#CC3333"; // for critical levels of issues
+      let colors = SonarCloudSecondarySidebarView._colors;
 
       if (value === 0) {
-        return whte;
+        return colors["whte"];
       } else if (value <= 5) {
-        return grn1;
+        return colors["grn1"];
       } else if (value <= 10) {
-        return grn2;
+        return colors["grn2"];
       } else if (value <= 15) {
-        return yllw;
+        return colors["yllw"];
       } else if (value <= 20) {
-        return orng;
+        return colors["orng"];
       } else {
-        return redd;
+        return colors["red_"];
       }
     }
 
     function getFullDescription(metric: string): any {
-      const fullDescriptions: any = {
+      const fullDescriptions: { [key: string]: string } = {
         bugs: "A coding error that will break your code and needs to be fixed immediately.",
         code_smells: "Code that is confusing and difficult to maintain.",
         duplicated_lines_density: "Identical lines of code.",
         ncloc: "The number of non-commented lines of code in the project.",
         vulnerabilities: "Code that can be exploited by hackers.",
-        cognitive_complexity: "A measure of how difficult the application is to understand.",
+        cognitive_complexity:
+          "A measure of how difficult the application is to understand.",
       };
 
-      return fullDescriptions[metric];
+      return fullDescriptions[metric] || "";
     }
 
     let lines = 0;
