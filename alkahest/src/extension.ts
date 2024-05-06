@@ -40,9 +40,12 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeScan",
     async () => {
       //console.log("changes seen");
-      await sonarQube.scan(); // Fetch the response from the SonarQube API
+      let status = { success: false }; // Initialize the status object
+      await sonarQube.scan(status); // Fetch the response from the SonarQube API
       // Execute the command to get the measures from the SonarQube API
-      vscode.commands.executeCommand("alkahest.sonarQubeGetMeasures");
+      if (status.success) {
+        vscode.commands.executeCommand("alkahest.sonarQubeGetMeasures");
+      }
     }
   );
 
@@ -68,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeGetDuplications",
     async () => {
       const response = await sonarQube.getDuplications(); // Fetch the duplications from the SonarQube API
-      console.log(response);
+      //console.log(response);
     }
   );
 

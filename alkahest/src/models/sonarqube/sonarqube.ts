@@ -3,34 +3,37 @@ import path from "path";
 import axios from "axios";
 
 import { execSync } from "child_process";
-import { window, workspace, ProgressLocation } from "vscode";
-
-const packageName = "sonarqube-scanner";
-
-const defaultEncoding = "UTF-8";
-const defaultDesc = "Project scanned by Alkahest on ";
+import * as vscode from "vscode";
 
 export default class SonarQube {
-  private projectKey: any; // Unique key to the project
-  private organization: any; // Unique organization of the user
-  private isScannedOnce: any; // Check if the project is scanned before
-  private apiCallOptions: any; // Options for the API calls
-  private projectEncoding: any; // Encoding of the project
-  private SonarCloudToken: any; // The SonarCloud authentication token
-  private projectDescription?: any; // Description of the project
+  private static readonly _packageName = "sonarqube-scanner";
+  private static readonly _defaultEncoding = "UTF-8";
+  private static readonly _defaultDesc = "Project scanned by Alkahest on ";
 
-  private static isPackageInstalled(): boolean {
+  private _projectKey: any; // Unique key to the project
+  private _projectEncoding: string; // Encoding of the project
+  private _projectDescription?: string; // Description of the project
+
+  private _organization: any; // Unique organization of the user
+  private _sonarCloudToken: any; // The SonarCloud authentication token
+
+  private _filesChanged: boolean;
+  private _apiCallOptions: any; // Options for the API calls
+
+  private static _isPackageInstalled(): boolean {
     try {
-      execSync(`npm list -g ${packageName}`, { stdio: "inherit" });
+      execSync(`npm list -g ${SonarQube._packageName}`, { stdio: "inherit" });
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  private static installPackage(): boolean {
+  private static _installPackage(): boolean {
     try {
-      execSync(`npm install -g ${packageName}`, { stdio: "inherit" });
+      execSync(`npm install -g ${SonarQube._packageName}`, {
+        stdio: "inherit",
+      });
       return true;
     } catch (error) {
       return false;
@@ -38,10 +41,11 @@ export default class SonarQube {
   }
 
   constructor(projectDescription?: string, projectEncoding?: string) {
-    if (!SonarQube.isPackageInstalled()) {
-      if (!SonarQube.installPackage()) {
-        window.showErrorMessage(
-          "SonarQube Scanner is not installed. Please install it manually before scanning."
+    if (!SonarQube._isPackageInstalled()) {
+      if (!SonarQube._installPackage()) {
+        vscode.window.showErrorMessage(
+          "SonarQube Scanner is not installed. " +
+            "Please install it manually before scanning."
         );
 
         throw new Error("SonarQube Scanner installation failed");
@@ -50,27 +54,34 @@ export default class SonarQube {
 
     const now = new Date().toISOString().replace(/:/g, "-");
 
-    this.isScannedOnce = this.isScannedBefore();
-    this.SonarCloudToken = process.env.SONARCLOUD_TOKEN;
-    this.organization = process.env.SONARCLOUD_ORGANIZATION;
-    this.projectEncoding = projectEncoding ?? defaultEncoding;
-    this.projectDescription = projectDescription ?? defaultDesc.concat(now);
+    this._projectKey =
+      this._getProjectKey() ??
+      (vscode.workspace.workspaceFolders?.[0].name ?? "project")
+        .replace(/ /g, "_")
+        .toLowerCase()
+        .concat(":", now);
+    this._projectEncoding = projectEncoding ?? SonarQube._defaultEncoding;
+    this._projectDescription =
+      projectDescription ?? SonarQube._defaultDesc.concat(now);
 
-    this.projectKey = (workspace.workspaceFolders?.[0].name ?? "project")
-      .replace(/ /g, "_")
-      .toLowerCase()
-      .concat(":", now);
+    this._organization = process.env.SONARCLOUD_ORGANIZATION;
+    this._sonarCloudToken = process.env.SONARCLOUD_TOKEN;
 
-    this.apiCallOptions = {
+    this._filesChanged = false;
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      this._filesChanged = true;
+    });
+
+    this._apiCallOptions = {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${this.SonarCloudToken}`,
+        Authorization: `Bearer ${this._sonarCloudToken}`,
       },
     };
   }
 
-  private async isPropertiesFilePresent(): Promise<boolean> {
-    const rootPath = workspace.workspaceFolders?.[0].uri.fsPath;
+  private async _isPropertiesFilePresent(): Promise<boolean> {
+    const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
     if (!rootPath) {
       return false;
@@ -80,9 +91,9 @@ export default class SonarQube {
     return files.some((file) => file === "sonar-project.properties");
   }
 
-  private async getProjectKey(): Promise<string | undefined> {
-    if (await this.isPropertiesFilePresent()) {
-      const rootPath = workspace.workspaceFolders?.[0].uri.fsPath;
+  private async _getProjectKey(): Promise<string | undefined> {
+    if (await this._isPropertiesFilePresent()) {
+      const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
       if (!rootPath) {
         return undefined;
@@ -103,31 +114,40 @@ export default class SonarQube {
     return undefined;
   }
 
-  public async isScannedBefore(): Promise<boolean> {
-    const projectKey = await this.getProjectKey();
+  private async _isScannedBefore(): Promise<boolean> {
+    const projectKey = await this._getProjectKey();
 
     if (!projectKey) {
       return false;
     }
 
     const response = await axios.get(
-      `https://sonarcloud.io/api/projects/search?organization=${this.organization}&q=${projectKey}`,
-      this.apiCallOptions
+      `https://sonarcloud.io/api/projects/search?organization=${this._organization}&q=${projectKey}`,
+      this._apiCallOptions
     );
 
     return response.data.components.length > 0;
   }
 
-  private async createPropertiesFile(proPath: string): Promise<void> {
+  private async _createPropertiesFile(proPath: string): Promise<void> {
+    function titleCase(str: string): string {
+      return str
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+
     const propertiesFileContent = [
       `sonar.host.url=https://sonarcloud.io/`,
-      `sonar.token=${this.SonarCloudToken}`,
-      `sonar.organization=${this.organization}`,
-      `sonar.projectKey=${this.projectKey}`,
-      `sonar.projectName=${this.projectKey.split(":")[0]}`,
-      `sonar.projectDescription=${this.projectDescription}`,
-      `sonar.sourceEncoding=${this.projectEncoding}`,
-      `sonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/test/**,**/tests/**,**/tmp/**,**/temp,.vscode/**,**/.vscode/**,**/.github/**,**/.git/**,**/.gitignore,**/.gitattributes,**/.gitmodules,**/.gitkeep`,
+      `sonar.token=${this._sonarCloudToken}`,
+      `sonar.organization=${this._organization}`,
+      `sonar.projectKey=${this._projectKey}`,
+      `sonar.projectName=${titleCase(this._projectKey.split(":")[0])}`,
+      `sonar.projectDescription=${this._projectDescription}`,
+      `sonar.sourceEncoding=${this._projectEncoding}`,
+      `sonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/test/**,**/tests/**,**/tmp/**,` +
+        `**/temp,.vscode/**,**/.vscode/**,**/.github/**,**/.git/**,**/.gitignore,**/.gitattributes,**/.gitmodules,**/.gitkeep`,
     ];
 
     fs.writeFileSync(
@@ -136,10 +156,10 @@ export default class SonarQube {
     );
   }
 
-  public async scan(): Promise<any> {
-    if (this.isScannedOnce) {
+  public async scan(status: { success: boolean }): Promise<any> {
+    if (!this._filesChanged && (await this._isScannedBefore())) {
       const confirmRescan = async () => {
-        const userResponse = await window.showInformationMessage(
+        const userResponse = await vscode.window.showInformationMessage(
           "Your project is already scanned once. Would you like to re-scan?",
           { modal: true },
           "Yes",
@@ -154,9 +174,9 @@ export default class SonarQube {
       }
     }
 
-    return window.withProgress(
+    return vscode.window.withProgress(
       {
-        location: ProgressLocation.Notification,
+        location: vscode.ProgressLocation.Notification,
         title: "Scanning your project",
         cancellable: true,
       },
@@ -165,21 +185,24 @@ export default class SonarQube {
         progress.report({ increment: progressValue });
 
         try {
-          const wsfs = workspace.workspaceFolders;
+          const wsfs = vscode.workspace.workspaceFolders;
           if (!wsfs) {
-            window.showErrorMessage("Please open a project before scanning");
-            throw new Error("No open projects");
+            vscode.window.showErrorMessage(
+              "Please open a project before scanning"
+            );
+
+            return;
           }
 
           const proPath = wsfs[0].uri.fsPath;
-          const proSize = SonarQube.getDirectorySize(proPath); // in MB
-          const msPerMB = 1220;
+          const proSize = SonarQube._getDirectorySize(proPath); // in MB
+          const msPerMB = 1125;
 
           const options = { cwd: proPath, stdio: "inherit" };
           const command = "sonar-scanner";
 
-          if (!(await this.isPropertiesFilePresent())) {
-            await this.createPropertiesFile(proPath);
+          if (!(await this._isPropertiesFilePresent())) {
+            await this._createPropertiesFile(proPath);
           }
 
           const { spawn } = require("child_process");
@@ -190,8 +213,6 @@ export default class SonarQube {
             if (childProcess && !childProcess.killed) {
               childProcess.kill(); // Kill the child process on cancellation
             }
-            clearInterval(progressInterval);
-            window.showWarningMessage("Scanning canceled by user");
           });
 
           const progressInterval = setInterval(() => {
@@ -201,8 +222,8 @@ export default class SonarQube {
             }
           }, (proSize * msPerMB) / 45); // 45 := number of loop iterations
 
-          const exitCode = await new Promise<number>((resolve) => {
-            childProcess.on("exit", (code: number) => {
+          const exitCode = await new Promise<number | null>((resolve) => {
+            childProcess.on("exit", (code: number | null) => {
               clearInterval(progressInterval);
               resolve(code);
             });
@@ -210,12 +231,16 @@ export default class SonarQube {
 
           if (exitCode === 0) {
             progress.report({ increment: 100 - progressValue });
-            window.showInformationMessage("Scanning completed");
-
-            return;
+            vscode.window.showInformationMessage("Scanning completed");
+            status.success = true;
+          } else if (exitCode === null) {
+            clearInterval(progressInterval);
+            vscode.window.showWarningMessage("Scanning canceled by user");
+            status.success = false;
           } else {
-            window.showErrorMessage("Scanning failed");
-            throw new Error(`Process exited with code: ${exitCode}`);
+            clearInterval(progressInterval);
+            vscode.window.showErrorMessage("Scanning failed");
+            status.success = false;
           }
         } catch (error: any) {
           console.error(error.message);
@@ -229,10 +254,10 @@ export default class SonarQube {
     const response = await axios.get(
       // The necessary metrics are hardcoded in the URL
       // They can be changed according to the requirements if needed
-      `https://sonarcloud.io/api/measures/component?component=${await this.getProjectKey()}
+      `https://sonarcloud.io/api/measures/component?component=${await this._getProjectKey()}
       &metricKeys=lines,bugs,code_smells,vulnerabilities,duplicated_lines_density,ncloc,cognitive_complexity
       &additionalFields=metrics`,
-      this.apiCallOptions
+      this._apiCallOptions
     );
 
     return {
@@ -244,9 +269,9 @@ export default class SonarQube {
   public async getDuplications(): Promise<any> {
     // To get the duplications, the project key is used
     const response = await axios.get(
-      `https://sonarcloud.io/api/measures/component_tree?component=${await this.getProjectKey()}
+      `https://sonarcloud.io/api/measures/component_tree?component=${await this._getProjectKey()}
       &metricKeys=duplicated_blocks`,
-      this.apiCallOptions
+      this._apiCallOptions
     );
 
     return response.data;
@@ -260,14 +285,14 @@ export default class SonarQube {
       await axios.post(
         `https://sonarcloud.io/api/authentication/logout`,
         {},
-        this.apiCallOptions
+        this._apiCallOptions
       );
     } catch (error: any) {
       console.error(error.message);
     }
   }
 
-  private static getDirectorySize(directoryPath: string): number {
+  private static _getDirectorySize(directoryPath: string): number {
     let sizeInBytes = 0;
 
     const calculateSize = (filePath: string) => {
