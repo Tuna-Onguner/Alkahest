@@ -75,11 +75,23 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  let sonarQubeGetIssues = vscode.commands.registerCommand(
+    "alkahest.sonarQubeGetIssues",
+    async () => {
+      const issues = await sonarQube.getIssues(); // Fetch the issues from the SonarQube API
+  
+      // Handle the issues
+      console.log(issues);
+      // This could be displaying the issues in the console, showing a message box, etc.
+    }
+  );  
+
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetMeasures); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeLogout); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetDuplications); // Add the command to the list of disposables
+  context.subscriptions.push(sonarQubeGetIssues); // Add the command to the list of disposables
 }
 
 // This method is called when your extension is deactivated

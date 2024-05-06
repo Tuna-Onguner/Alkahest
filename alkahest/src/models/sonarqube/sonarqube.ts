@@ -55,7 +55,7 @@ export default class SonarQube {
     const now = new Date().toISOString().replace(/:/g, "-");
 
     this._projectKey =
-      this._getProjectKey() ??
+      // this._getProjectKey() ??
       (vscode.workspace.workspaceFolders?.[0].name ?? "project")
         .replace(/ /g, "_")
         .toLowerCase()
@@ -64,6 +64,7 @@ export default class SonarQube {
     this._projectDescription =
       projectDescription ?? SonarQube._defaultDesc.concat(now);
 
+    console.log("PROJECT KEY "+this._projectKey);
     this._organization = process.env.SONARCLOUD_ORGANIZATION;
     this._sonarCloudToken = process.env.SONARCLOUD_TOKEN;
 
@@ -206,7 +207,12 @@ export default class SonarQube {
           }
 
           const { spawn } = require("child_process");
-          const childProcess = spawn(command, [], options);
+          const sonarScannerPath = 'C:\\Users\\user\\.sonar\\native-sonar-scanner\\sonar-scanner-5.0.1.3006-windows\\bin\\sonar-scanner.bat';
+          const childProcess = spawn(sonarScannerPath, [], options);
+
+
+          //const { spawn } = require("child_process");
+          //const childProcess = spawn(command, [], options);
 
           // Track cancellation event
           token.onCancellationRequested(() => {
@@ -264,6 +270,15 @@ export default class SonarQube {
       measures: response.data.component.measures,
       metrics: response.data.metrics,
     };
+  }
+
+  public async getIssues(): Promise<any> {
+    const response = await axios.get(
+      `https://sonarcloud.io/api/issues/search?components=${await this._getProjectKey()}`,
+      this._apiCallOptions
+    );
+  
+    return response.data.issues;
   }
 
   public async getDuplications(): Promise<any> {
