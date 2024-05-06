@@ -10,6 +10,8 @@ export default class SonarQube {
   private static readonly _defaultEncoding = "UTF-8";
   private static readonly _defaultDesc = "Project scanned by Alkahest on ";
 
+  private readonly _now: string = new Date().toISOString().replace(/:/g, "-");
+
   private _projectKey: any; // Unique key to the project
   private _projectEncoding: string; // Encoding of the project
   private _projectDescription?: string; // Description of the project
@@ -52,17 +54,9 @@ export default class SonarQube {
       }
     }
 
-    const now = new Date().toISOString().replace(/:/g, "-");
-
-    this._projectKey =
-      // this._getProjectKey() ??
-      (vscode.workspace.workspaceFolders?.[0].name ?? "project")
-        .replace(/ /g, "_")
-        .toLowerCase()
-        .concat(":", now);
     this._projectEncoding = projectEncoding ?? SonarQube._defaultEncoding;
     this._projectDescription =
-      projectDescription ?? SonarQube._defaultDesc.concat(now);
+      projectDescription ?? SonarQube._defaultDesc.concat(this._now);
 
     console.log("PROJECT KEY "+this._projectKey);
     this._organization = process.env.SONARCLOUD_ORGANIZATION;
@@ -79,6 +73,15 @@ export default class SonarQube {
         Authorization: `Bearer ${this._sonarCloudToken}`,
       },
     };
+  }
+
+  public async initializeKey(): Promise<void> {
+    this._projectKey =
+      (await this._getProjectKey()) ??
+      (vscode.workspace.workspaceFolders?.[0].name ?? "project")
+        .replace(/ /g, "_")
+        .toLowerCase()
+        .concat(":", this._now);
   }
 
   private async _isPropertiesFilePresent(): Promise<boolean> {

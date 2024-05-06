@@ -36,6 +36,14 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  let initializeSQ = vscode.commands.registerCommand(
+    "alkahest.initializeSQ",
+    async () => {
+      // The code placed here will be executed every time the command is executed
+      await sonarQube.initializeKey();
+    }
+  );
+
   let sonarQubeScan = vscode.commands.registerCommand(
     "alkahest.sonarQubeScan",
     async () => {
@@ -87,11 +95,14 @@ export function activate(context: vscode.ExtensionContext) {
   );  
 
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
+  context.subscriptions.push(initializeSQ); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetMeasures); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeLogout); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetDuplications); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeGetIssues); // Add the command to the list of disposables
+
+  vscode.commands.executeCommand("alkahest.initializeSQ"); // Execute the command to initialize the SonarQube API
 }
 
 // This method is called when your extension is deactivated
