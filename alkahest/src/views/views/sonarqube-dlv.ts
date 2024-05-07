@@ -88,42 +88,80 @@ public static getFilePathsFromKeys(keys: string[], duplications: { [filePath: st
 
   
 
-  private static _getWebviewContent(duplicatedPaths: string[]): string {
-    let listItems = "";
-    for (const path of duplicatedPaths) {
-      listItems += `<li><a href="#" data-path="${path}">${path}</a></li>`;
-    }
+private static _getWebviewContent(duplicatedPaths: string[]): string {
+  let listItems = "";
+  for (const path of duplicatedPaths) {
+      listItems += `<li><button class="path-button" data-path="${path}">${path}</button></li>`;
+  }
 
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Duplicated Lines</title>
-        </head>
-        <body>
-          <h1>Duplicated Lines Paths</h1>
-          <ul>${listItems}</ul>
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Duplicated Lines</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+          }
+          h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+          }
+          .path-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition-duration: 0.4s;
+          }
+          .path-button:hover {
+            background-color: #45a049;
+          }
+          .path-button:active {
+            background-color: #3e8e41;
+          }
+          ul {
+            list-style-type: none;
+            padding: 0;
+          }
+          li {
+            margin-bottom: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Duplicated Lines Paths</h1>
+        <ul>${listItems}</ul>
 
-          <script>
-            const vscode = acquireVsCodeApi();
+        <script>
+          const vscode = acquireVsCodeApi();
 
-            document.querySelectorAll('a').forEach(link => {
-              link.addEventListener('click', event => {
-                event.preventDefault();
-                const filePath = event.target.getAttribute('data-path');
-                vscode.postMessage({
-                  command: 'openFile',
-                  filePath: filePath
-                });
+          document.querySelectorAll('.path-button').forEach(button => {
+            button.addEventListener('click', event => {
+              event.preventDefault();
+              const filePath = event.target.getAttribute('data-path');
+              vscode.postMessage({
+                command: 'openFile',
+                filePath: filePath
               });
             });
-          </script>
-        </body>
-      </html>
-    `;
-  }
+          });
+        </script>
+      </body>
+    </html>
+  `;
+}
+
 
 // Method to highlight duplicated lines in the editor
 public static async highlightDuplicatedLines(filePath: string, duplicatedLines: number[] = []): Promise<void> {
@@ -142,7 +180,7 @@ public static async highlightDuplicatedLines(filePath: string, duplicatedLines: 
 
       // Apply decorations to highlight duplicated lines
       editor.setDecorations(vscode.window.createTextEditorDecorationType({
-        backgroundColor: 'rgba(255, 0, 0, 0.3)'
+        backgroundColor: 'rgba(255, 255, 0, 0.3)'
       }), decorations);
     } else {
       console.warn('No duplicated lines found.');
