@@ -4,11 +4,7 @@ import axios from "axios";
 import * as vscode from "vscode";
 
 import { execSync } from "child_process";
-interface File {
-  key: string;
-  name: string;
-  projectName: string;
-}
+import { File } from "./file";
 
 export default class SonarQube {
   private static readonly _packageName = "sonarqube-scanner";

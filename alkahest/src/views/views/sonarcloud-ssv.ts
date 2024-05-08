@@ -1,23 +1,15 @@
 import * as vscode from "vscode";
+import { ColorPalatte } from "./../color-palatte";
 
 export default class SonarCloudSecondarySidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
-  private static readonly _colors: { [key: string]: string } = {
-    whte: "#F9F6EE",
-    grn1: "#339966",
-    grn2: "#669900",
-    yllw: "#FDDA0D",
-    orng: "#E5682D",
-    red_: "#CC3333",
-  };
   private static readonly _metricDescriptions: { [key: string]: string } = {
     bugs: "A coding error that will break your code and needs to be fixed immediately.",
     code_smells: "Code that is confusing and difficult to maintain.",
     duplicated_lines_density: "Identical lines of code.",
     ncloc: "The number of non-commented lines of code in the project.",
     vulnerabilities: "Code that can be exploited by hackers.",
-    cognitive_complexity:
-      "A measure of how difficult the application is to understand.",
+    cognitive_complexity: "A measure of how difficult the application is to understand.",
   };
 
   public static createOrShow(context: vscode.ExtensionContext): void {
@@ -70,20 +62,20 @@ export default class SonarCloudSecondarySidebarView {
     }
 
     function chooseColor(value: number): string {
-      let colors = SonarCloudSecondarySidebarView._colors;
+      const palatte = ColorPalatte;
 
       if (value === 0) {
-        return colors["whte"];
+        return palatte.white();
       } else if (value <= 5) {
-        return colors["grn1"];
+        return palatte.green();
       } else if (value <= 10) {
-        return colors["grn2"];
+        return palatte.light_green();
       } else if (value <= 15) {
-        return colors["yllw"];
+        return palatte.yellow();
       } else if (value <= 20) {
-        return colors["orng"];
+        return palatte.orange();
       } else {
-        return colors["red_"];
+        return palatte.red();
       }
     }
 

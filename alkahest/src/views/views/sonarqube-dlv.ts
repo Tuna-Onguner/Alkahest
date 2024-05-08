@@ -216,7 +216,7 @@ export default class SonarQubeDuplicatedLines {
         // Apply decorations to highlight duplicated lines
         editor.setDecorations(
           vscode.window.createTextEditorDecorationType({
-            backgroundColor: "rgba(255, 255, 0, 0.3)",
+            backgroundColor: "rgba(253, 218, 13, 0.3)",
           }),
           decorations
         );
