@@ -1,9 +1,17 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import * as vscode from "vscode";
 
 import { execSync } from "child_process";
 import * as vscode from "vscode";
+import { window, workspace, ProgressLocation } from "vscode";
+import { isPackageInstalled, installPackage } from "./sonarqube-install";
+interface File {
+  key: string;
+  name: string;
+  projectName: string;
+}
 
 export default class SonarQube {
   private static readonly _packageName = "sonarqube-scanner";
@@ -269,16 +277,126 @@ export default class SonarQube {
     };
   }
 
-  public async getDuplications(): Promise<any> {
-    // To get the duplications, the project key is used
-    const response = await axios.get(
-      `https://sonarcloud.io/api/measures/component_tree?component=${await this._getProjectKey()}
-      &metricKeys=duplicated_blocks`,
-      this._apiCallOptions
-    );
+  public async getFilesWithDuplicatedLines(): Promise<string[]> {
+    try {
+        // Make a request to the API endpoint
+        const response = await axios.get(
+            // Query for duplicated_lines_density metric only
+            `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
+            &metricKeys=duplicated_lines_density`,
+            this.apiCallOptions
+        );
 
-    return response.data;
+        const duplicatedFiles: string[] = [];
+
+        // Process the response data
+        const components = response.data.components;
+
+        // Check each component to find files with duplicated lines
+        components.forEach((component: any) => {
+            // Check if the component has measures
+            if (component.measures) {
+                // Find the measure for duplicated lines density
+                const duplicatedLinesMeasure = component.measures.find((measure: any) => measure.metric === 'duplicated_lines_density');
+                
+                // Check if the measure exists and its value is greater than 0
+                if (duplicatedLinesMeasure && parseFloat(duplicatedLinesMeasure.value) > 0) {
+                    duplicatedFiles.push(component.key);
+                }
+            }
+        });
+
+        return duplicatedFiles;
+    } catch (error: any) {
+        console.error(error.message);
+        throw error;
+    }
+}
+
+public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]: number[] }> {
+  try {
+    const allDuplications: any[] = [];
+    const allFiles: { [key: string]: File } = {};
+
+    // Iterate over each file path
+    for (const filePath of filePaths) {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/duplications/show?key=${encodeURIComponent(filePath)}`,
+        this.apiCallOptions
+      );
+
+      // Add duplications from the response to the allDuplications array
+      allDuplications.push(...response.data.duplications);
+      // Iterate over files in the response
+      for (const fileKey of Object.keys(response.data.files)) {
+        const file = response.data.files[fileKey];
+        // Add file to allFiles if it doesn't exist
+        if (!allFiles[file.key]) {
+          const filePath = file.key.split(":").slice(2).join(":"); // Extracting from the third segment onward
+          // Add file to allFiles if it doesn't exist
+          if (!allFiles[filePath]) {
+            allFiles[filePath] = file;
+          }
+        }
+      }
+
+
+      // Update block references to use file name instead of _ref
+      for (const duplication of response.data.duplications) {
+        for (const block of duplication.blocks) {
+          // Get the file key referenced by the block
+          const fileKey = block._ref;
+
+          // Find the corresponding file object
+          const correspondingFile = response.data.files[fileKey];
+
+          if (!correspondingFile) {
+            console.error(`File with key ${fileKey} not found.`);
+            continue;
+          }
+
+          // Update the block reference to use file name
+          block._ref = correspondingFile.name;
+        }
+      }
   }
+    // Initialize a hashmap to store file paths and their duplicated lines
+    const filePathsAndDuplicationLines: { [filePath: string]: number[] } = {};
+
+    // Iterate over each duplication
+    for (const duplication of allDuplications) {
+      // Iterate over each block in the duplication
+      for (const block of duplication.blocks) {
+        // Get the file key referenced by the block
+        const fileKey = block._ref;
+
+        // If the file path is not in the hashmap, initialize it with an empty array
+        if (!filePathsAndDuplicationLines[fileKey]) {
+          filePathsAndDuplicationLines[fileKey] = [];
+        }
+
+        // Add the duplicated lines from the block to the corresponding file path
+        const from = block.from; // Starting line of the duplicated block
+        const to = block.from + block.size - 1; // Ending line of the duplicated block
+        for (let i = from; i <= to; i++) {
+          // Check if the line number already exists in the array
+          if (!filePathsAndDuplicationLines[fileKey].includes(i)) {
+            filePathsAndDuplicationLines[fileKey].push(i);
+          }
+        }
+      }
+    }
+
+    return filePathsAndDuplicationLines;
+  } catch (error: any) {
+    console.error(error.message);
+    throw error;
+  }
+}
+
+
+
+
 
   public async logout(): Promise<any> {
     // SonarCloud does not logout explicitly
