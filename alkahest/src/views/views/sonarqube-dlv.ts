@@ -34,7 +34,7 @@ export default class SonarQubeDuplicatedLines {
         (message) => {
           // Open the file when a path is clicked
           (async () => {
-            const { filePaths } = SonarQubeDuplicatedLines.getFilePathsFromKeys(
+            const { filePaths } = SonarQubeDuplicatedLines._getFilePathsFromKeys(
               keys,
               duplications
             );
@@ -44,7 +44,7 @@ export default class SonarQubeDuplicatedLines {
             );
 
             if (index !== -1) {
-              const filePath = filePaths[index]; // Get the corresponding file path
+              //const filePath = filePaths[index]; // Get the corresponding file path
               const duplicationKey = Object.keys(duplications)[index]; // Get the key corresponding to the file path
               const duplicationLines = duplications[duplicationKey]; // Get the duplicated lines for the key
 
@@ -76,19 +76,20 @@ export default class SonarQubeDuplicatedLines {
 
   public static update(
     duplicatedKeys: string[],
-    duplications: { [filePath: string]: number[] }
+    duplications: { [filePath: string]: number[] },
   ): void {
-    const { fullPaths } = SonarQubeDuplicatedLines.getFilePathsFromKeys(
+    const { fullPaths } = SonarQubeDuplicatedLines._getFilePathsFromKeys(
       duplicatedKeys,
       duplications
     ); // Destructure fullPaths from the returned object
+
     if (SonarQubeDuplicatedLines._panel) {
       SonarQubeDuplicatedLines._panel.webview.html =
         SonarQubeDuplicatedLines._getWebviewContent(fullPaths); // Pass fullPaths instead of duplicatedPaths
     }
   }
 
-  public static getFilePathsFromKeys(
+  private static _getFilePathsFromKeys(
     keys: string[],
     duplications: { [filePath: string]: number[] }
   ): { filePaths: string[]; fullPaths: string[] } {
@@ -117,77 +118,75 @@ export default class SonarQubeDuplicatedLines {
   }
 
   private static _getWebviewContent(duplicatedPaths: string[]): string {
-    let listItems = "";
+    let listItems = "", i = 1;
     for (const path of duplicatedPaths) {
-      listItems += `<li><button class="path-button" data-path="${path}">${path}</button></li>`;
+      // Truncate text if longer than 180px and add ellipsis
+      const truncatedPath = path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
+      listItems += `<li class="path-item" title="${path}" data-path="${path}">${i}. ${truncatedPath}</li>`;
+
+      i = i + 1;
     }
-
+    
     return `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Duplicated Lines</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-          }
-          h1 {
-            font-size: 1.5em;
-            margin-bottom: 20px;
-          }
-          .path-button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition-duration: 0.4s;
-          }
-          .path-button:hover {
-            background-color: #45a049;
-          }
-          .path-button:active {
-            background-color: #3e8e41;
-          }
-          ul {
-            list-style-type: none;
-            padding: 0;
-          }
-          li {
-            margin-bottom: 10px;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Duplicated Lines Paths</h1>
-        <ul>${listItems}</ul>
-
-        <script>
-          const vscode = acquireVsCodeApi();
-
-          document.querySelectorAll('.path-button').forEach(button => {
-            button.addEventListener('click', event => {
-              event.preventDefault();
-              const filePath = event.target.getAttribute('data-path');
-              vscode.postMessage({
-                command: 'openFile',
-                filePath: filePath
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Duplicated Lines</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+            }
+            h1 {
+              font-size: 1.5em;
+              margin-bottom: 20px;
+            }
+            .path-item {
+              font-size: 12px;
+              cursor: pointer;
+              width: 93%; /* Constant width */
+              white-space: nowrap; /* Prevent text wrapping */
+              overflow: hidden;
+              text-overflow: ellipsis; /* Display ellipsis for overflow text */
+              padding: 8px 0;
+              border-bottom: 1px solid #ddd; /* Thin line separator */
+              transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+            }
+            .path-item:hover {
+              background-color: #f0f0f0; /* Light gray background on hover */
+              color: #333; /* Darken text color for readability */
+            }
+            ul {
+              list-style-type: none;
+              padding: 0;
+            }
+            li {
+              margin-bottom: 0; /* Remove extra margin for better alignment */
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Duplicated Lines Paths</h1>
+          <ul>${listItems}</ul>
+      
+          <script>
+            const vscode = acquireVsCodeApi();
+      
+            document.querySelectorAll('.path-item').forEach(item => {
+              item.addEventListener('click', event => {
+                const filePath = event.currentTarget.getAttribute('data-path');
+                vscode.postMessage({
+                  command: 'openFile',
+                  filePath: filePath
+                });
               });
             });
-          });
-        </script>
-      </body>
-    </html>
-  `;
+          </script>
+        </body>
+      </html>
+    `;
   }
 
   // Method to highlight duplicated lines in the editor
