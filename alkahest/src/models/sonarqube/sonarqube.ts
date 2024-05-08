@@ -4,9 +4,6 @@ import axios from "axios";
 import * as vscode from "vscode";
 
 import { execSync } from "child_process";
-import * as vscode from "vscode";
-import { window, workspace, ProgressLocation } from "vscode";
-import { isPackageInstalled, installPackage } from "./sonarqube-install";
 interface File {
   key: string;
   name: string;
@@ -282,9 +279,9 @@ export default class SonarQube {
         // Make a request to the API endpoint
         const response = await axios.get(
             // Query for duplicated_lines_density metric only
-            `https://sonarcloud.io/api/measures/component_tree?component=${this.projectKey}
+            `https://sonarcloud.io/api/measures/component_tree?component=${this._projectKey}
             &metricKeys=duplicated_lines_density`,
-            this.apiCallOptions
+            this._apiCallOptions
         );
 
         const duplicatedFiles: string[] = [];
@@ -322,7 +319,7 @@ public async getDuplications(filePaths: string[]): Promise<{ [filePath: string]:
     for (const filePath of filePaths) {
       const response = await axios.get(
         `https://sonarcloud.io/api/duplications/show?key=${encodeURIComponent(filePath)}`,
-        this.apiCallOptions
+        this._apiCallOptions
       );
 
       // Add duplications from the response to the allDuplications array
