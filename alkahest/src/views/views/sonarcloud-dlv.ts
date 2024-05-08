@@ -132,7 +132,8 @@ export default class SonarQubeDuplicatedLines {
       <html lang="en">
         <head>
           <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="viewport" content="width=device-width, 
+                initial-scale=1.0" />
           <title>Duplicated Lines</title>
           <style>
             body {
@@ -146,24 +147,24 @@ export default class SonarQubeDuplicatedLines {
             .path-item {
               font-size: 12px;
               cursor: pointer;
-              width: 93%; /* Constant width */
-              white-space: nowrap; /* Prevent text wrapping */
+              width: 94%;
+              white-space: nowrap;
               overflow: hidden;
-              text-overflow: ellipsis; /* Display ellipsis for overflow text */
+              text-overflow: ellipsis;
               padding: 8px 0;
-              border-bottom: 1px solid #ddd; /* Thin line separator */
-              transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+              border-bottom: 1px solid #ddd;
+              transition: background-color 0.3s ease, color 0.3s ease;
             }
             .path-item:hover {
-              background-color: #f0f0f0; /* Light gray background on hover */
-              color: #333; /* Darken text color for readability */
+              background-color: #f0f0f0;
+              color: #333;
             }
             ul {
               list-style-type: none;
               padding: 0;
             }
             li {
-              margin-bottom: 0; /* Remove extra margin for better alignment */
+              margin-bottom: 0;
             }
           </style>
         </head>
