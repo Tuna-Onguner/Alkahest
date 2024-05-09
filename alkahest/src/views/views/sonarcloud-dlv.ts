@@ -53,6 +53,7 @@ export default class SonarQubeDuplicatedLines {
                   "vscode.open",
                   vscode.Uri.file(message.filePath)
                 );
+
                 // Highlight duplicated lines when a path is clicked
                 await SonarQubeDuplicatedLines.highlightDuplicatedLines(
                   message.filePath,
@@ -95,18 +96,22 @@ export default class SonarQubeDuplicatedLines {
   ): { filePaths: string[]; fullPaths: string[] } {
     const fullPaths: string[] = [];
     const filePaths: string[] = [];
+
     const duplicatedKeysArray = Object.keys(duplications);
 
     keys.forEach((key) => {
       const parts = key.split(":");
+
       if (parts.length === 3) {
         const filePath = parts[2];
+
         // Check if the filePath is present in duplicatedKeysArray
         if (duplicatedKeysArray.includes(filePath)) {
           const fullPath = vscode.Uri.joinPath(
             vscode.workspace.workspaceFolders![0].uri,
             filePath
           ).fsPath;
+
           fullPaths.push(fullPath);
           filePaths.push(filePath);
         }
@@ -114,19 +119,33 @@ export default class SonarQubeDuplicatedLines {
         console.error(`Invalid file key: ${key}`);
       }
     });
+
     return { filePaths, fullPaths };
   }
 
   private static _getWebviewContent(duplicatedPaths: string[]): string {
-    let listItems = "", i = 1;
-    for (const path of duplicatedPaths) {
-      // Truncate text if longer than 180px and add ellipsis
-      const truncatedPath = path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
-      listItems += `<li class="path-item" title="${path}" data-path="${path}">${i}. ${truncatedPath}</li>`;
-
-      i = i + 1;
-    }
+    let listItems = "";
+    let i = 1;
     
+    for (const path of duplicatedPaths) {
+      // Truncate text if longer than 80 characters and add ellipsis
+      const truncatedPath = path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
+    
+      // TODO: Calculate, or fetch, the percentage of duplicated lines
+      // SARPER, DO HERE
+      const percentage = 0;
+    
+      // Append the list item with the percentage
+      listItems += `
+        <li class="path-item" title="${path}" data-path="${path}">
+          ${i}. ${truncatedPath}
+          <span style="float: right; color: #888;">${percentage}%</span>
+        </li>
+      `;
+    
+      i++;
+    }
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -147,7 +166,7 @@ export default class SonarQubeDuplicatedLines {
             .path-item {
               font-size: 12px;
               cursor: pointer;
-              width: 94%;
+              width: 95%;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -209,6 +228,7 @@ export default class SonarQubeDuplicatedLines {
               Number.MAX_SAFE_INTEGER
             ); // End of the line
             const range = new vscode.Range(startPosition, endPosition);
+
             return { range };
           }
         );
