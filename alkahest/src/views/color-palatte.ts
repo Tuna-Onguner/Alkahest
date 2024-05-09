@@ -1,34 +1,41 @@
 export class ColorPalatte {
-  private static readonly _palatte = {
-    "Seashell": "#F9F6EE",
-    "Illuminating Emerald": "#339966",
-    "Avocado": "#669900",
-    "Sizzling Sunrise": "#FDDA0D",
-    "Deep Carrot Orange": "#E5682D",
-    "Persian Red": "#CC3333",
-  };
-  
   public static white(): string {
-    return ColorPalatte._palatte["Seashell"];
+    return "#F9F6EE";
   }
 
   public static green(): string {
-    return ColorPalatte._palatte["Illuminating Emerald"];
+    return "#339966";
   }
 
   public static light_green(): string {
-    return ColorPalatte._palatte["Avocado"];
+    return "#669900";
   }
 
   public static yellow(): string {
-    return ColorPalatte._palatte["Sizzling Sunrise"];
+    return "#FDDA0D";
   }
 
   public static orange(): string {
-    return ColorPalatte._palatte["Deep Carrot Orange"];
+    return "#E5682D";
   }
 
   public static red(): string {
-    return ColorPalatte._palatte["Persian Red"];
+    return "#CC3333";
+  }
+
+  public static colorDeciderByPercentage(percentage: number): string {
+    if (percentage === 0) {
+      return ColorPalatte.white();
+    } else if (percentage <= 5) {
+      return ColorPalatte.green();
+    } else if (percentage <= 10) {
+      return ColorPalatte.light_green();
+    } else if (percentage <= 15) {
+      return ColorPalatte.yellow();
+    } else if (percentage <= 20) {
+      return ColorPalatte.orange();
+    } else {
+      return ColorPalatte.red();
+    }
   }
 }

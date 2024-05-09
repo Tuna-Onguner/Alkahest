@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 
+import { ColorPalatte } from "./../color-palatte";
+
 export default class SonarQubeDuplicatedLines {
   private static _panel: vscode.WebviewPanel | undefined;
 
@@ -129,29 +131,41 @@ export default class SonarQubeDuplicatedLines {
     duplicatedPaths: string[],
     duplications: { [filePath: string]: number[] }
   ): string {
-    let listItems = "";
     let i = 1;
+    let listItems = "";
+
+    let cd = ColorPalatte.colorDeciderByPercentage;
+
+    const maxPathLength = 70;
 
     for (const path of duplicatedPaths) {
-      // Truncate text if longer than 80 characters and add ellipsis
-      const truncatedPath =
-        path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
+      const truncatePath = (filePath: string) => {
+        if (filePath.length > maxPathLength) {
+          return filePath.slice(0, maxPathLength) + "...";
+        }
 
-      // TODO: Calculate, or fetch, the percentage of duplicated lines
-      const totalLines =
-        SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
-      const duplicatedLines =
-        SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
-          path,
-          duplications
-        ) || 1;
+        return filePath;
+      };
+
+      const totalLines = SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
+      const duplicatedLines = SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
+        path,
+        duplications
+      ) || 1;
+
       const percentage = ((duplicatedLines / totalLines) * 100).toFixed(2);
 
       // Append the list item with the percentage
       listItems += `
-        <li class="path-item" title="${path}" data-path="${path}">
-          ${i}. ${truncatedPath}
-          <span style="float: right; color: #888;">${percentage}%</span>
+        <li class="path-item" 
+            title="${path}" 
+            data-path="${path}">
+          ${i}. ${truncatePath(path)}
+          <span style="float: right; 
+                      color: ${cd(Number.parseFloat(percentage))};
+                      font-weight: bold;">
+            ${percentage}%
+          </span>
         </li>
       `;
 
@@ -178,13 +192,15 @@ export default class SonarQubeDuplicatedLines {
             .path-item {
               font-size: 12px;
               cursor: pointer;
-              width: 95%;
+              display: inline-block;
+              width: 99%;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              padding: 8px 0;
-              border-bottom: 1px solid #ddd;
+              padding: 8px 4px;
+              /*border-bottom: 1px solid #ddd;*/
               transition: background-color 0.3s ease, color 0.3s ease;
+              border-radius: 5px;
             }
             .path-item:hover {
               background-color: #f0f0f0;

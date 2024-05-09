@@ -61,24 +61,6 @@ export default class SonarCloudSecondarySidebarView {
       return typeof num === "number" && num === num && num % 1 !== 0;
     }
 
-    function chooseColor(value: number): string {
-      const palatte = ColorPalatte;
-
-      if (value === 0) {
-        return palatte.white();
-      } else if (value <= 5) {
-        return palatte.green();
-      } else if (value <= 10) {
-        return palatte.light_green();
-      } else if (value <= 15) {
-        return palatte.yellow();
-      } else if (value <= 20) {
-        return palatte.orange();
-      } else {
-        return palatte.red();
-      }
-    }
-
     let lines = 0;
     for (let i = 0; i < metrics.length; i++) {
       if (measures[i].metric === "lines") {
@@ -93,8 +75,7 @@ export default class SonarCloudSecondarySidebarView {
       const value = measures[i].value;
       const metric = measures[i].metric;
       const title = titleCase(metric.replace(/_/g, " "));
-      const fullDescription =
-        SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
+      const fullDescription = SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
 
       if (metric === "lines") {
         continue;
@@ -110,7 +91,7 @@ export default class SonarCloudSecondarySidebarView {
           <td>
             <svg width="100" height="100">
               <circle cx="50" cy="50" r="${radius + 3}" fill="white"/>
-              <circle cx="50" cy="50" r="${radius}" fill="${chooseColor(
+              <circle cx="50" cy="50" r="${radius}" fill="${ColorPalatte.colorDeciderByPercentage(
         percantage_value
       )}"/>
               <text x="50" y="51" text-anchor="middle" dominant-baseline="middle" fill="black">${value}${
