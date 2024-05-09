@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
 
 export default class SonarQubeDuplicatedLines {
   private static _panel: vscode.WebviewPanel | undefined;
@@ -34,10 +35,11 @@ export default class SonarQubeDuplicatedLines {
         (message) => {
           // Open the file when a path is clicked
           (async () => {
-            const { filePaths } = SonarQubeDuplicatedLines._getFilePathsFromKeys(
-              keys,
-              duplications
-            );
+            const { filePaths } =
+              SonarQubeDuplicatedLines._getFilePathsFromKeys(
+                keys,
+                duplications
+              );
 
             const index = filePaths.findIndex((filePath) =>
               message.filePath.includes(filePath)
@@ -77,7 +79,7 @@ export default class SonarQubeDuplicatedLines {
 
   public static update(
     duplicatedKeys: string[],
-    duplications: { [filePath: string]: number[] },
+    duplications: { [filePath: string]: number[] }
   ): void {
     const { fullPaths } = SonarQubeDuplicatedLines._getFilePathsFromKeys(
       duplicatedKeys,
@@ -86,7 +88,7 @@ export default class SonarQubeDuplicatedLines {
 
     if (SonarQubeDuplicatedLines._panel) {
       SonarQubeDuplicatedLines._panel.webview.html =
-        SonarQubeDuplicatedLines._getWebviewContent(fullPaths); // Pass fullPaths instead of duplicatedPaths
+        SonarQubeDuplicatedLines._getWebviewContent(fullPaths, duplications); // Pass fullPaths instead of duplicatedPaths
     }
   }
 
@@ -123,18 +125,28 @@ export default class SonarQubeDuplicatedLines {
     return { filePaths, fullPaths };
   }
 
-  private static _getWebviewContent(duplicatedPaths: string[]): string {
+  private static _getWebviewContent(
+    duplicatedPaths: string[],
+    duplications: { [filePath: string]: number[] }
+  ): string {
     let listItems = "";
     let i = 1;
-    
+
     for (const path of duplicatedPaths) {
       // Truncate text if longer than 80 characters and add ellipsis
-      const truncatedPath = path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
-    
+      const truncatedPath =
+        path.length > 80 ? `${path.slice(0, 77)}...` : `${path}`;
+
       // TODO: Calculate, or fetch, the percentage of duplicated lines
-      // SARPER, DO HERE
-      const percentage = 0;
-    
+      const totalLines =
+        SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
+      const duplicatedLines =
+        SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
+          path,
+          duplications
+        ) || 1;
+      const percentage = ((duplicatedLines / totalLines) * 100).toFixed(2);
+
       // Append the list item with the percentage
       listItems += `
         <li class="path-item" title="${path}" data-path="${path}">
@@ -142,7 +154,7 @@ export default class SonarQubeDuplicatedLines {
           <span style="float: right; color: #888;">${percentage}%</span>
         </li>
       `;
-    
+
       i++;
     }
 
@@ -246,5 +258,45 @@ export default class SonarQubeDuplicatedLines {
     } catch (error) {
       console.error(error);
     }
+  }
+  private static _getTotalLinesForDocument(filePath: string): number {
+    try {
+      // Read the file synchronously
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+
+      // Split the content into lines
+      const lines = fileContent.split("\n");
+
+      // Return the total number of lines
+      return lines.length;
+    } catch (error) {
+      console.error(`Error reading file ${filePath}: ${error}`);
+      return 0; // Return 0 if there's an error
+    }
+  }
+  private static _getFilePathFromFullPath(
+    fullPath: string,
+    filePaths: string[]
+  ): string | undefined {
+    for (const filePath of filePaths) {
+      if (fullPath.includes(filePath)) {
+        return filePath;
+      }
+    }
+    return undefined;
+  }
+  private static _getDuplicatedLinesLengthForPath(
+    fullPath: string,
+    duplications: { [filePath: string]: number[] }
+  ): number | undefined {
+    const filePaths = Object.keys(duplications);
+    const filePath = SonarQubeDuplicatedLines._getFilePathFromFullPath(
+      fullPath,
+      filePaths
+    );
+    if (filePath) {
+      return duplications[filePath].length;
+    }
+    return undefined;
   }
 }
