@@ -24,7 +24,7 @@ environment and auto-review it with SonarQube to provide overall code review wit
 
 *All dependencies, and dev-dependencies, are listed under the file **package.json**.*
 
-- **SonarQube:** The extension will automatically install a local copy of SonarQube via sonarqube-scanner-npm unless it is already installed. In case of a failed installation trial, follow the procedures on (sonarqube-scanner)[https://www.npmjs.com/package/sonarqube-scanner] to install it manually.
+- **SonarQube:** The extension will automatically install a local copy of SonarQube via sonarqube-scanner-npm unless it is already installed. In case of a failed installation trial, follow the procedures on [sonarqube-scanner](https://www.npmjs.com/package/sonarqube-scanner) to install it manually.
 
 - **Google Generative AI**: Refer to https://ai.google.dev/gemini-api/docs/get-started/node.
 
