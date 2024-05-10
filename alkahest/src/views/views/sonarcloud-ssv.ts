@@ -9,7 +9,8 @@ export default class SonarCloudSecondarySidebarView {
     duplicated_lines_density: "Identical lines of code.",
     ncloc: "The number of non-commented lines of code in the project.",
     vulnerabilities: "Code that can be exploited by hackers.",
-    cognitive_complexity: "A measure of how difficult the application is to understand.",
+    cognitive_complexity:
+      "A measure of how difficult the application is to understand.",
   };
 
   public static createOrShow(context: vscode.ExtensionContext): void {
@@ -75,7 +76,8 @@ export default class SonarCloudSecondarySidebarView {
       const value = measures[i].value;
       const metric = measures[i].metric;
       const title = titleCase(metric.replace(/_/g, " "));
-      const fullDescription = SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
+      const fullDescription =
+        SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
 
       if (metric === "lines") {
         continue;

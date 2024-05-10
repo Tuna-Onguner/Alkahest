@@ -147,11 +147,13 @@ export default class SonarQubeDuplicatedLines {
         return filePath;
       };
 
-      const totalLines = SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
-      const duplicatedLines = SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
-        path,
-        duplications
-      ) || 1;
+      const totalLines =
+        SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
+      const duplicatedLines =
+        SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
+          path,
+          duplications
+        ) || 1;
 
       const percentage = ((duplicatedLines / totalLines) * 100).toFixed(2);
 

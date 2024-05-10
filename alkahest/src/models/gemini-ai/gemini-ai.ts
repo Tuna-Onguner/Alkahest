@@ -13,6 +13,14 @@ export default class GeminiAI {
   private ggenmodel: any; // The model to use
   private initialized: boolean = false; // Whether the model has been initialized
 
+  private static readonly geminiModelsInputTokenLimits: {
+    [modelName: string]: number;
+  } = {
+    "gemini-pro": 30720,
+    "gemini-1.5-pro-latest": 1048576,
+    "gemini-pro-vision": 12288,
+  };
+
   /**
    * Initialize the GeminiAI model
    * @param modelName The name of the model to use; "gemini-pro" by default since it's the only model available as of Feb 2024
@@ -45,7 +53,22 @@ export default class GeminiAI {
     } else {
       try {
         const requestText = `${prompt}${args.join("")}`; // Join any additional arguments to the prompt
+
+        // Check if the request text exceeds the token limit
+        const modelName = this.ggenmodel.modelName;
+        const tokenLimit = GeminiAI.geminiModelsInputTokenLimits[modelName];
+        if (requestText.length > tokenLimit) {
+          // If the request text exceeds the token limit, log an error and return undefined
+          console.error(`Request text exceeds token limit for ${modelName}`);
+          window.showInformationMessage(
+            `Request text exceeds token limit for ${modelName}`
+          );
+
+          return undefined;
+        }
+
         const response = await this.ggenmodel.generateContent(requestText); // Generate content
+
         return response?.response?.text(); // Return the response text
       } catch (error: any) {
         // Catch errors and log them, for example connection errors

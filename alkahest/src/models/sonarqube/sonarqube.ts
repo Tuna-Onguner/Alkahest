@@ -37,7 +37,8 @@ export default class SonarQube {
       execSync(`npm install -g ${SonarQube._packageName}`, {
         stdio: "inherit",
       });
-      return true;
+
+      return SonarQube._isPackageInstalled();
     } catch (error) {
       return false;
     }
