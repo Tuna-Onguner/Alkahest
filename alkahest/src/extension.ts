@@ -5,6 +5,7 @@ import * as dotenv from "dotenv"; // The module 'dotenv' is used to load environ
 import GeminiAI from "./models/gemini-ai/gemini-ai";
 import SonarQube from "./models/sonarqube/sonarqube";
 import SonarCloudSecondarySidebarView from "./views/views/sonarcloud-ssv";
+import SonarCloudBugsSidebarView from "./views/views/sonarcloud-bsv";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -62,11 +63,13 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       const response = await sonarQube.getMeasures(); // Fetch the metrics from the SonarQube API
 
+      const bugs = context.globalState.get("bugs"); // Retrieve the issues from the global state
       // Display the response in the seconndary sidebar
       SonarCloudSecondarySidebarView.createOrShow(context);
-      SonarCloudSecondarySidebarView.update(response.measures, response.metrics);
+      SonarCloudSecondarySidebarView.update(response.measures, response.metrics, context);
     }
   );
+  
 
   let sonarQubeLogout = vscode.commands.registerCommand(
     "alkahest.sonarQubeLogout",
@@ -88,12 +91,46 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       const issues = await sonarQube.getIssues(); // Fetch the issues from the SonarQube API
   
+      // Prepare the issues for the table
+      const bugs = issues.map((issue: { type: any; message: any; component: any; line: any; severity: any; }, index: number) => ({
+        id: index + 1,
+        type: issue.type,
+        message: issue.message,
+        component: issue.component,
+        line: issue.line,
+        severity: issue.severity,
+      }));
+  
+      console.log(bugs); // Display the issues in the console
+      context.globalState.update("bugs", bugs); // Store the issues in the global state
+  
+      // Set the webview's HTML content
+      SonarCloudBugsSidebarView.createOrShow(context, bugs); // Pass the 'context' argument to the 'createOrShow' method
+    }
+  );
+/*
+  let sonarQubeGetIssues = vscode.commands.registerCommand(
+    "alkahest.sonarQubeGetIssues",
+    async () => {
+      const issues = await sonarQube.getIssues(); // Fetch the issues from the SonarQube API
+  
       // Handle the issues
-      console.log(issues);
+      const totalIssues = issues.length;
+      console.log(`Total issues: ${totalIssues}`);
+      let issueNo = 1;
+      issues.forEach((issue: { type: any; message: any; component: any; line: any; severity: any; }) => {
+        console.log(`Issue ${issueNo++}`);
+        console.log(`Type: ${issue.type}`);
+        console.log(`Message: ${issue.message}`);
+        console.log(`Component: ${issue.component}`);
+        console.log(`Line: ${issue.line}`);
+        console.log(`Severity: ${issue.severity}`);
+        console.log('------------------------');
+    });
       // This could be displaying the issues in the console, showing a message box, etc.
     }
   );  
-
+*/
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(initializeSQ); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables

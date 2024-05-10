@@ -58,7 +58,6 @@ export default class SonarQube {
     this._projectDescription =
       projectDescription ?? SonarQube._defaultDesc.concat(this._now);
 
-    console.log("PROJECT KEY "+this._projectKey);
     this._organization = process.env.SONARCLOUD_ORGANIZATION;
     this._sonarCloudToken = process.env.SONARCLOUD_TOKEN;
 
@@ -213,7 +212,6 @@ export default class SonarQube {
           const sonarScannerPath = 'C:\\Users\\user\\.sonar\\native-sonar-scanner\\sonar-scanner-5.0.1.3006-windows\\bin\\sonar-scanner.bat';
           const childProcess = spawn(sonarScannerPath, [], options);
 
-
           //const { spawn } = require("child_process");
           //const childProcess = spawn(command, [], options);
 
@@ -275,14 +273,44 @@ export default class SonarQube {
     };
   }
 
+  /*
   public async getIssues(): Promise<any> {
-    const response = await axios.get(
-      `https://sonarcloud.io/api/issues/search?components=${await this._getProjectKey()}`,
-      this._apiCallOptions
-    );
-  
-    return response.data.issues;
+    const projectKey = await this._getProjectKey();
+    console.log("project key is issues", projectKey);
+    try {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/issues/search?components=${projectKey}&types=BUG`,
+        this._apiCallOptions
+      );
+      return response.data.issues;
+    } catch (error) {
+      console.error((error as any).response);
+    }
+      
   }
+  */
+  
+
+  public async getIssues(): Promise<any> {
+    const projectKey = await this._getProjectKey();
+    try {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&types=BUG`,
+        this._apiCallOptions
+      );
+
+      /*
+      response.data.issues.forEach((issue: any) => {
+        console.log(`Rule: ${issue.rule}, Severity: ${issue.severity} Message: ${issue.message}, Line: ${issue.line}`);
+      });
+      */
+      
+      return response.data.issues;
+    } catch (error) {
+      console.error((error as any).response);
+    }
+  }
+
 
   public async getDuplications(): Promise<any> {
     // To get the duplications, the project key is used
