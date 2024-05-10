@@ -108,29 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
       SonarCloudBugsSidebarView.createOrShow(context, bugs); // Pass the 'context' argument to the 'createOrShow' method
     }
   );
-/*
-  let sonarQubeGetIssues = vscode.commands.registerCommand(
-    "alkahest.sonarQubeGetIssues",
-    async () => {
-      const issues = await sonarQube.getIssues(); // Fetch the issues from the SonarQube API
-  
-      // Handle the issues
-      const totalIssues = issues.length;
-      console.log(`Total issues: ${totalIssues}`);
-      let issueNo = 1;
-      issues.forEach((issue: { type: any; message: any; component: any; line: any; severity: any; }) => {
-        console.log(`Issue ${issueNo++}`);
-        console.log(`Type: ${issue.type}`);
-        console.log(`Message: ${issue.message}`);
-        console.log(`Component: ${issue.component}`);
-        console.log(`Line: ${issue.line}`);
-        console.log(`Severity: ${issue.severity}`);
-        console.log('------------------------');
-    });
-      // This could be displaying the issues in the console, showing a message box, etc.
-    }
-  );  
-*/
+
   context.subscriptions.push(geminiTest); // Add the command to the list of disposables
   context.subscriptions.push(initializeSQ); // Add the command to the list of disposables
   context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
