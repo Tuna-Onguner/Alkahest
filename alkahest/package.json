@@ -32,10 +32,6 @@
       {
         "command": "alkahest.sonarQubeGetDuplications",
         "title": "SonarQube Duplications"
-      },
-      {
-        "command": "alkahest.sonarQubeGetIssues",
-        "title": "SonarQube Issues"
       }
     ]
   },
