@@ -136,7 +136,7 @@ export default class SonarQubeDuplicatedLines {
 
     let cd = ColorPalatte.colorDeciderByPercentage;
 
-    const maxPathLength = 70;
+    const maxPathLength = 60;
 
     for (const path of duplicatedPaths) {
       const truncatePath = (filePath: string) => {

@@ -109,7 +109,6 @@ export default class SonarCloudBugsSidebarView {
         <table>
           <tr>
             <th>ID</th>
-            <th>Type</th>
             <th>Message</th>
             <th>Component</th>
             <th>Line</th>

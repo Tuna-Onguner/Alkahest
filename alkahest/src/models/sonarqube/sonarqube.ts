@@ -278,7 +278,7 @@ export default class SonarQube {
         `https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&types=BUG`,
         this._apiCallOptions
       );
-      
+
       return response.data.issues;
     } catch (error) {
       console.error((error as any).response);

@@ -50,7 +50,10 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeScan",
     async () => {
       //console.log("changes seen");
-      let status = { success: false }; // Initialize the status object
+      let status = {
+        success: false,
+      };
+
       await sonarQube.scan(status); // Fetch the response from the SonarQube API
       // Execute the command to get the measures from the SonarQube API
       if (status.success) {
@@ -85,6 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
       const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
+
       SonarQubeDuplicatedLines.createOrShow(context, response, filePath); // Create or show the webview panel
       SonarQubeDuplicatedLines.update(filePath, response); // Update the webview panel with the duplicated files
     }
@@ -94,20 +98,31 @@ export function activate(context: vscode.ExtensionContext) {
     "alkahest.sonarQubeGetIssues",
     async () => {
       const issues = await sonarQube.getIssues(); // Fetch the issues from the SonarQube API
-  
+
       // Prepare the issues for the table
-      const bugs = issues.map((issue: { type: any; message: any; component: any; line: any; severity: any; }, index: number) => ({
-        id: index + 1,
-        type: issue.type,
-        message: issue.message,
-        component: issue.component,
-        line: issue.line,
-        severity: issue.severity,
-      }));
-  
+      const bugs = issues.map(
+        (
+          issue: {
+            type: any;
+            message: any;
+            component: any;
+            line: any;
+            severity: any;
+          },
+          index: number
+        ) => ({
+          id: index + 1,
+          type: issue.type,
+          message: issue.message,
+          component: issue.component,
+          line: issue.line,
+          severity: issue.severity,
+        })
+      );
+
       console.log(bugs); // Display the issues in the console
       context.globalState.update("bugs", bugs); // Store the issues in the global state
-  
+
       // Set the webview's HTML content
       SonarCloudBugsSidebarView.createOrShow(context, bugs); // Pass the 'context' argument to the 'createOrShow' method
     }
