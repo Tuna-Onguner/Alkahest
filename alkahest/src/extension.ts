@@ -120,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
       );
 
-      console.log(bugs); // Display the issues in the console
+      //console.log(bugs); // Display the issues in the console
       context.globalState.update("bugs", bugs); // Store the issues in the global state
 
       // Set the webview's HTML content

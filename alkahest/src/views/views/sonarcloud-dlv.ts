@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
 import * as fs from "fs";
+import * as vscode from "vscode";
 
-import { ColorPalatte } from "./../color-palatte";
+import { ColorPalatte } from "../color-palatte";
 
 export default class SonarQubeDuplicatedLines {
   private static _panel: vscode.WebviewPanel | undefined;

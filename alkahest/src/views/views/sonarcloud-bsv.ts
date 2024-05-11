@@ -1,9 +1,11 @@
 import path from "path";
 import * as vscode from "vscode";
 
+import { ColorPalatte } from "../color-palatte";
+
 export default class SonarCloudBugsSidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
-  private static fullPath = vscode.Uri.file("").fsPath;
+  private static _fullPath = vscode.Uri.file("").fsPath;
 
   public static createOrShow(
     context: vscode.ExtensionContext,
@@ -38,12 +40,12 @@ export default class SonarCloudBugsSidebarView {
         }
 
         // Combine the workspace root path and the file path
-        SonarCloudBugsSidebarView.fullPath = path.join(
+        SonarCloudBugsSidebarView._fullPath = path.join(
           workspaceRoot,
           decodedFilePath
         );
 
-        bug.component = SonarCloudBugsSidebarView.fullPath;
+        bug.component = SonarCloudBugsSidebarView._fullPath;
       }
 
       SonarCloudBugsSidebarView._panel.onDidDispose(
@@ -59,14 +61,19 @@ export default class SonarCloudBugsSidebarView {
 
       SonarCloudBugsSidebarView._panel.webview.onDidReceiveMessage(
         (message) => {
-          console.log("Received message", message);
-          if (message.command === "openFile") {
-            const openPath = vscode.Uri.file(message.text); // Use the path from the message
+          (async () => {
+            if (message.command === "openFile") {
+              await vscode.commands.executeCommand(
+                "vscode.open",
+                vscode.Uri.file(message.text)
+              );
 
-            vscode.workspace.openTextDocument(openPath).then((doc) => {
-              vscode.window.showTextDocument(doc); // Open the file
-            });
-          }
+              await SonarCloudBugsSidebarView._highlightBuggedLine(
+                message.text,
+                [message.line]
+              );
+            }
+          })();
         },
         undefined,
         context.subscriptions
@@ -96,7 +103,7 @@ export default class SonarCloudBugsSidebarView {
             padding-top: 12px;
             padding-bottom: 12px;
             text-align: left;
-            background-color: #4CAF50;
+            background-color: #1E90FF;
             color: white;
           }
         </style>
@@ -121,13 +128,77 @@ export default class SonarCloudBugsSidebarView {
       htmlContent += `<tr>
         <td>${bug.id}</td>
         <td>${bug.message}</td>
-        <td><a href="#" onclick="console.log('Clicked'); vscode.postMessage({ command: 'openFile', text: '${bug.component}' }); return false;">${bug.component}</a></td>
-        <td>${bug.line}</td><td>${bug.severity}</td>
+        <td><a href="#" onclick="
+          vscode.postMessage(
+            { 
+              command: 'openFile', 
+              text: '${bug.component}', 
+              line: ${bug.line} 
+            }
+          ); 
+          
+          return false;">${bug.component}</a></td>
+        <td>${bug.line}</td><td style="background-color: ${(function () {
+        switch (bug.severity) {
+          case "BLOCKER":
+            return ColorPalatte.red();
+          case "CRITICAL":
+            return ColorPalatte.orange();
+          case "MAJOR":
+            return ColorPalatte.yellow();
+          case "MINOR":
+            return ColorPalatte.green();
+          case "INFO":
+            return ColorPalatte.light_green();
+          default:
+            return ColorPalatte.white();
+        }
+      })()}; color: black;">${bug.severity}</td>
       </tr>`;
     }
 
     htmlContent += "</table></body></html>";
 
     return htmlContent;
+  }
+
+  private static async _highlightBuggedLine(
+    filePath: string,
+    lines: number[] = []
+  ): Promise<void> {
+    try {
+      const document = await vscode.workspace.openTextDocument(filePath);
+
+      // Check if duplicatedLines is defined
+      if (lines && lines.length > 0) {
+        const decorations: vscode.DecorationOptions[] = lines.map((line) => {
+          const startPosition = new vscode.Position(line - 1, 0); // Lines in VS Code are 0-indexed
+          const endPosition = new vscode.Position(
+            line - 1,
+            Number.MAX_SAFE_INTEGER
+          ); // End of the line
+
+          const range = new vscode.Range(startPosition, endPosition);
+
+          return { range };
+        });
+
+        const editor = await vscode.window.showTextDocument(document, {
+          selection: decorations[0].range,
+        });
+
+        // Apply decorations to highlight duplicated lines
+        editor.setDecorations(
+          vscode.window.createTextEditorDecorationType({
+            backgroundColor: "rgba(204, 51, 51, 0.3)",
+          }),
+          decorations
+        );
+      } else {
+        console.warn("No duplicated lines found.");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
