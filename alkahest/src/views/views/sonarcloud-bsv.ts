@@ -54,7 +54,7 @@ export default class SonarCloudBugsSidebarView {
         message => {
           console.log('Received message', message);
           if (message.command === 'openFile') {
-            const openPath = vscode.Uri.file(message.filePath); // Use the path from the message
+            const openPath = vscode.Uri.file(message.text); // Use the path from the message
             vscode.workspace.openTextDocument(openPath).then(doc => {
               vscode.window.showTextDocument(doc); // Open the file
             });
