@@ -73,6 +73,6 @@ There are no additional settings needed to be manually satisfied by users.
 
 To summarize, you can see the files added by us at path `Alkahest/alkahest/src`.
 - `src/models` has backend implementations.
-- `src/views` has` frontend implementations.
+- `src/views` has frontend implementations.
 
 And, all executable commands of our extension are listed under the file **package.json**.
