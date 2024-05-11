@@ -70,7 +70,7 @@ export default class SonarCloudBugsSidebarView {
 
               await SonarCloudBugsSidebarView._highlightBuggedLine(
                 message.text,
-                [message.line]
+                [message.line,]
               );
             }
           })();
@@ -95,9 +95,15 @@ export default class SonarCloudBugsSidebarView {
             border-collapse: collapse;
           }
           th, td {
+            width: 20%;
+            font-size: 0.9em;
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+          }
+          td a {
+            text-decoration: none;
+            color: black;
           }
           th {
             padding-top: 12px;
@@ -113,47 +119,64 @@ export default class SonarCloudBugsSidebarView {
       </head>
       <body>
         <h1>Welcome to Bugs Sidebar!</h1>
+        <h2>We have found ${bugs.length} bugs.</h2>
         <table>
           <tr>
-            <th>ID</th>
-            <th>Message</th>
-            <th>Component</th>
+            <th>#</th>
+            <th>Description</th>
+            <th>File</th>
             <th>Line</th>
-            <th>Severity</th>
+            <th style="
+              text-align: center;
+            ">Severity</th>
           </tr>
     `;
 
     // Add a row for each bug
     for (const bug of bugs) {
-      htmlContent += `<tr>
+      htmlContent += `<tr style="
+        background-color: ${
+          (function () {
+            switch (bug.severity) {
+              case "BLOCKER":
+                return ColorPalatte.red();
+              case "CRITICAL":
+                return ColorPalatte.orange();
+              case "MAJOR":
+                return ColorPalatte.yellow();
+              case "MINOR":
+                return ColorPalatte.green();
+              case "INFO":
+                return ColorPalatte.light_green();
+              default:
+                return ColorPalatte.white();
+            }
+          })()
+        };
+      ">
         <td>${bug.id}</td>
         <td>${bug.message}</td>
-        <td><a href="#" onclick="
-          vscode.postMessage(
-            { 
-              command: 'openFile', 
-              text: '${bug.component}', 
-              line: ${bug.line} 
+        <td>
+          <a href="#" 
+             onclick="vscode.postMessage(
+              { 
+                command: 'openFile', 
+                text: '${bug.component}', 
+                line: ${bug.line} 
+              }
+            ); 
+            
+            return false;">${
+              bug.component.length > 31
+                ? "..." + bug.component.slice(-31)
+                : bug.component
             }
-          ); 
-          
-          return false;">${bug.component}</a></td>
-        <td>${bug.line}</td><td style="background-color: ${(function () {
-        switch (bug.severity) {
-          case "BLOCKER":
-            return ColorPalatte.red();
-          case "CRITICAL":
-            return ColorPalatte.orange();
-          case "MAJOR":
-            return ColorPalatte.yellow();
-          case "MINOR":
-            return ColorPalatte.green();
-          case "INFO":
-            return ColorPalatte.light_green();
-          default:
-            return ColorPalatte.white();
-        }
-      })()}; color: black;">${bug.severity}</td>
+          </a>
+        </td>
+        <td>${bug.line}</td>
+        <td style="
+          text-align: center;
+        ">${bug.severity}</td>
       </tr>`;
     }
 

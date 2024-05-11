@@ -136,12 +136,12 @@ export default class SonarQubeDuplicatedLines {
 
     let cd = ColorPalatte.colorDeciderByPercentage;
 
-    const maxPathLength = 60;
+    const maxPathLength = 64;
 
     for (const path of duplicatedPaths) {
       const truncatePath = (filePath: string) => {
         if (filePath.length > maxPathLength) {
-          return filePath.slice(0, maxPathLength) + "...";
+          return "..." + filePath.slice(-maxPathLength);
         }
 
         return filePath;
@@ -181,15 +181,10 @@ export default class SonarQubeDuplicatedLines {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, 
                 initial-scale=1.0" />
-          <title>Duplicated Lines</title>
           <style>
             body {
               font-family: Arial, sans-serif;
               padding: 20px;
-            }
-            h1 {
-              font-size: 1.5em;
-              margin-bottom: 20px;
             }
             .path-item {
               font-size: 12px;
@@ -218,7 +213,9 @@ export default class SonarQubeDuplicatedLines {
           </style>
         </head>
         <body>
-          <h1>Duplicated Lines Paths</h1>
+          <h1>Welcome to Duplicated Lines Paths!</h1>
+          <h2>We have found ${duplicatedPaths.length} duplicated paths.</h2>
+
           <ul>${listItems}</ul>
       
           <script>
@@ -246,7 +243,6 @@ export default class SonarQubeDuplicatedLines {
   ): Promise<void> {
     try {
       const document = await vscode.workspace.openTextDocument(filePath);
-      const editor = await vscode.window.showTextDocument(document);
 
       // Check if duplicatedLines is defined
       if (duplicatedLines && duplicatedLines.length > 0) {
@@ -263,6 +259,10 @@ export default class SonarQubeDuplicatedLines {
             return { range };
           }
         );
+
+        const editor = await vscode.window.showTextDocument(document, {
+          selection: decorations[0].range,
+        });
 
         // Apply decorations to highlight duplicated lines
         editor.setDecorations(
