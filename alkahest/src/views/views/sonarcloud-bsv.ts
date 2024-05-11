@@ -1,7 +1,10 @@
+import path from "path";
 import * as vscode from "vscode";
 
 export default class SonarCloudBugsSidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
+
+  private static fullPath = vscode.Uri.file('').fsPath;
 
   public static createOrShow(context: vscode.ExtensionContext, bugs: any[]): void {
     const column = vscode.ViewColumn.Two;
@@ -18,6 +21,25 @@ export default class SonarCloudBugsSidebarView {
         }
       );
 
+      for (const bug of bugs) {
+        const filePath = bug.component.split(':').slice(2).join(':'); // Extract the file path
+        const decodedFilePath = decodeURIComponent(filePath); // Decode the URL
+
+        // Get the workspace root path
+        let workspaceRoot;
+
+        if (vscode.workspace.workspaceFolders) {
+          workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        } else {
+          console.error('No workspace is open');
+          return;
+        }
+
+        // Combine the workspace root path and the file path
+        SonarCloudBugsSidebarView.fullPath = path.join(workspaceRoot, decodedFilePath);
+        bug.component = SonarCloudBugsSidebarView.fullPath;
+      }
+
       SonarCloudBugsSidebarView._panel.onDidDispose(
         () => {
           SonarCloudBugsSidebarView._panel = undefined;
@@ -32,9 +54,7 @@ export default class SonarCloudBugsSidebarView {
         message => {
           console.log('Received message', message);
           if (message.command === 'openFile') {
-            const filePath = message.text.split(':').slice(2).join(':'); // Extract the file path
-            const decodedFilePath = decodeURIComponent(filePath); // Decode the URL
-            const openPath = vscode.Uri.file(decodedFilePath); // Create a Uri from the file path
+            const openPath = vscode.Uri.file(message.filePath); // Use the path from the message
             vscode.workspace.openTextDocument(openPath).then(doc => {
               vscode.window.showTextDocument(doc); // Open the file
             });
