@@ -271,6 +271,20 @@ export default class SonarQube {
     };
   }
 
+  public async getIssues(): Promise<any> {
+    const projectKey = await this._getProjectKey();
+    try {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&types=BUG`,
+        this._apiCallOptions
+      );
+      
+      return response.data.issues;
+    } catch (error) {
+      console.error((error as any).response);
+    }
+  }
+
   public async getFilesWithDuplicatedLines(): Promise<string[]> {
     try {
       // Make a request to the API endpoint
