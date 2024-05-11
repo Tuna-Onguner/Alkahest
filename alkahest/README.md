@@ -22,7 +22,7 @@ environment and auto-review it with SonarQube to provide overall code review wit
 
 ## Requirements
 
-*All dependencies, and dev-dependencies, are listed under the file **package.json**. Some important ones are listed below.*
+*All dependencies, and dev-dependencies, are listed under the file **package-lock.json**. Some important ones are listed below.*
 
 - **SonarQube:** The extension will automatically install a local copy of SonarQube via sonarqube-scanner-npm unless it is already installed. In case of a failed installation trial, follow the procedures on [sonarqube-scanner](https://www.npmjs.com/package/sonarqube-scanner) to install it manually.
 
@@ -39,19 +39,27 @@ environment and auto-review it with SonarQube to provide overall code review wit
 
 - **VSCode:** Version 1.86 or higher.
 
-- **Environment**: Alkahest requires to use a Unix-based operating system since we have tested our code on MacOS X. Moreover, we are unable to guarantee whether the extension can run as expected on other types of operating systems, including Windows.
+- **Environment**: Alkahest requires to use a **Unix-based operating system** since we have tested our code on MacOS X. Moreover, we are unable to guarantee whether the extension can run as expected on other types of operating systems, *including Windows*.
 
-- **Node.js:** Ensure that Node.js is installed on your device. You can download and install it from [nodejs.org](https://nodejs.org/en). Version 18.x or higher is required.
+- **Node.js:** Ensure that Node.js is installed on your device. You can download and install it from [nodejs.org](https://nodejs.org/en). *Version 18.x or higher is required*.
+
+- SonarCloud account with a valid API key.
+
+- Google Generative AI, i.e. Gemini, API key.
 
 ### Installation and Execution
 
-- **Step 1:** Clone the project to your local from this repository. Start a new terminal session from the project. Then, direct to the folder "alkahest" which is under the main folder "Alkahest", i.e. **cd alkahest**. To make sure you are in the right folder, use ls command; you should see package-lock.json file there.
+- **Step 0:** Clone the project to your local from this repository. Start a new terminal session from the project. Then, direct to the folder "alkahest" which is under the main folder "Alkahest", i.e. **cd alkahest**. To make sure you are in the right folder, use ls command; you should see package-lock.json file there.
 
-- **Step 2:** Install dependencies using the command **npm install**. This will read the package-lock.json file and install all required packages listed there. If it fails, make sure that you succesfully completed the first steps and satisfied the prerequisites.
+- **Step 1:** Install dependencies using the command **npm install**. This will read the package-lock.json file and install all required packages listed there. If it fails, make sure that you succesfully completed the first steps and satisfied the prerequisites.
 
-- **Step 3:** Start your VSCode and open the project on it. Then, direct to the file "extension.ts" at path "Alkahest/alkahest/src/extension.ts". To run the extension, use ***fn + F5*** keyboard combination on extension.ts, which will automatically start our extension on a new window.
+- **Step 2:** Create a .env file under the folder "alkahest", you can use .env-example for correct structure.
 
-Refer to https://code.visualstudio.com/api if you need further assistance or guidance.
+- **Step 3:** Direct to the file "extension.ts" at path "Alkahest/alkahest/src/extension.ts". To run the extension, use ***fn + F5*** keyboard combination on extension.ts, which will automatically start our extension on a new window.
+
+- **Step 4:** Refer to User Manual, i.e. **alkahest-user-manual.md**. Or, see it in the Final Report.
+
+Refer to https://code.visualstudio.com/api if you need either further assistance or guidance.
 
 
 ## Extension Settings
@@ -59,4 +67,12 @@ Refer to https://code.visualstudio.com/api if you need further assistance or gui
 There are no additional settings needed to be manually satisfied by users.
 
 
-## About Project Structure
+## About Project/Extension Structure
+
+*See "vsc-extension-quickstart.md" file under the same folder with this README.md for the offical documentation.*
+
+To summarize, you can see the files added by us at path "Alkahest/alkahest/src".
+- src/models has backend implementations.
+- src/views has frontend implementations.
+
+And, all executable commands of our extension are listed under the file **package.json**.
