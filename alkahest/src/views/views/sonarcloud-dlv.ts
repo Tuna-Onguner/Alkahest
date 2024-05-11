@@ -257,6 +257,7 @@ export default class SonarQubeDuplicatedLines {
               line - 1,
               Number.MAX_SAFE_INTEGER
             ); // End of the line
+
             const range = new vscode.Range(startPosition, endPosition);
 
             return { range };
@@ -277,6 +278,7 @@ export default class SonarQubeDuplicatedLines {
       console.error(error);
     }
   }
+
   private static _getTotalLinesForDocument(filePath: string): number {
     try {
       // Read the file synchronously
@@ -292,6 +294,7 @@ export default class SonarQubeDuplicatedLines {
       return 0; // Return 0 if there's an error
     }
   }
+
   private static _getFilePathFromFullPath(
     fullPath: string,
     filePaths: string[]
@@ -301,8 +304,10 @@ export default class SonarQubeDuplicatedLines {
         return filePath;
       }
     }
+
     return undefined;
   }
+
   private static _getDuplicatedLinesLengthForPath(
     fullPath: string,
     duplications: { [filePath: string]: number[] }
@@ -312,9 +317,11 @@ export default class SonarQubeDuplicatedLines {
       fullPath,
       filePaths
     );
+
     if (filePath) {
       return duplications[filePath].length;
     }
+
     return undefined;
   }
 }
