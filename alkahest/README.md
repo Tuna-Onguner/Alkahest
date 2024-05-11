@@ -33,6 +33,21 @@ environment and auto-review it with SonarQube to provide overall code review wit
 - **axios**
 
 
+## Build Instructions
+
+### Prerequisites
+
+- **Environment**: We recommend to use a Unix-based operating system since we have tested our code on MacOS X.
+
+- **Node.js:** Ensure that Node.js is installed on your device. You can download and install it from [nodejs.org](https://nodejs.org/en). Version 18.x or higher is required.
+
+### Installation
+
+- **Step 1:** Clone the project to your local. Start a terminal session from the project. Then, direct to the folder "alkahest" which is under the main folder "Alkahest", i.e. **cd alkahest**. To make sure you are in the right folder, use ls command, you should see package-lock.json file there.
+
+- **Step 2:** Install dependencies using the command **npm install**. This will read the package-lock.json file and install all required packages listed there. If it fails, make sure that you succesfully completed the first step.
+
+
 ## Extension Settings
 
 There are no additional settings needed to be manually satisfied by users.
