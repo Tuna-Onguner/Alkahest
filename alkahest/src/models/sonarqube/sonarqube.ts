@@ -210,6 +210,11 @@ export default class SonarQube {
             await this._createPropertiesFile(proPath);
           }
 
+          // Alperin linelari
+          //const { spawn } = require("child_process");
+          //const sonarScannerPath = 'C:\\Users\\user\\.sonar\\native-sonar-scanner\\sonar-scanner-5.0.1.3006-windows\\bin\\sonar-scanner.bat';
+          //const childProcess = spawn(sonarScannerPath, [], options);
+
           const { spawn } = require("child_process");
           const childProcess = spawn(command, [], options);
 
@@ -270,6 +275,27 @@ export default class SonarQube {
       metrics: response.data.metrics,
     };
   }
+
+  public async getIssues(): Promise<any> {
+    const projectKey = await this._getProjectKey();
+    try {
+      const response = await axios.get(
+        `https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&types=BUG`,
+        this._apiCallOptions
+      );
+
+      /*
+      response.data.issues.forEach((issue: any) => {
+        console.log(`Rule: ${issue.rule}, Severity: ${issue.severity} Message: ${issue.message}, Line: ${issue.line}`);
+      });
+      */
+      
+      return response.data.issues;
+    } catch (error) {
+      console.error((error as any).response);
+    }
+  }
+
 
   public async getFilesWithDuplicatedLines(): Promise<string[]> {
     try {
