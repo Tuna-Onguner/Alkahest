@@ -49,9 +49,11 @@ export default class SonarCloudGeminiResponseSidebarView {
             </head>
             <body>
             <h1>Gemini Response</h1>
-            <p1>
-              ${response}
-            </p1>
+            <pre>
+              <code>
+                ${response}
+              </code>
+            </pre>
             </body>
         </html>
     `;
