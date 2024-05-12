@@ -15,7 +15,7 @@ import SonarCloudBugsSidebarView from "./views/views/sonarcloud-bsv";
 export function activate(context: vscode.ExtensionContext) {
   // Load environment variables from .env file
   const dotenvPath = path.resolve(__dirname, "../.env"); // Path to .env file
-  dotenv.config({ path:dotenvPath });
+  dotenv.config({ path: dotenvPath });
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
@@ -93,10 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // Display the response in the seconndary sidebar
       SonarCloudMeasuresSidebarView.createOrShow(context);
-      SonarCloudMeasuresSidebarView.update(
-        response.measures,
-        response.metrics
-      );
+      SonarCloudMeasuresSidebarView.update(response.measures, response.metrics);
     }
   );
 
@@ -106,7 +103,11 @@ export function activate(context: vscode.ExtensionContext) {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
       const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
 
-      SonarCloudDuplicationsSidebarView.createOrShow(context, response, filePath); // Create or show the webview panel
+      SonarCloudDuplicationsSidebarView.createOrShow(
+        context,
+        response,
+        filePath
+      ); // Create or show the webview panel
       SonarCloudDuplicationsSidebarView.update(filePath, response); // Update the webview panel with the duplicated files
     }
   );
