@@ -16,7 +16,7 @@ export default class SonarQubeDuplicatedLines {
       SonarQubeDuplicatedLines._panel.reveal(column);
     } else {
       SonarQubeDuplicatedLines._panel = vscode.window.createWebviewPanel(
-        "sonarQubeDuplicatedLines",
+        "sonarCloudDuplicationsSidebarView",
         "Duplicated Lines",
         column,
         {

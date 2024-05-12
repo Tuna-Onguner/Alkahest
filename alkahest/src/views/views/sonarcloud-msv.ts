@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ColorPalatte } from "../color-palatte";
 
-export default class SonarCloudSecondarySidebarView {
+export default class SonarCloudMeasuresSidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
   private static readonly _metricDescriptions: { [key: string]: string } = {
     bugs: "A coding error that will break your code and needs to be fixed immediately.",
@@ -16,11 +16,11 @@ export default class SonarCloudSecondarySidebarView {
   public static createOrShow(context: vscode.ExtensionContext): void {
     const column = vscode.ViewColumn.Two;
 
-    if (SonarCloudSecondarySidebarView._panel) {
-      SonarCloudSecondarySidebarView._panel.reveal(column);
+    if (SonarCloudMeasuresSidebarView._panel) {
+      SonarCloudMeasuresSidebarView._panel.reveal(column);
     } else {
-      SonarCloudSecondarySidebarView._panel = vscode.window.createWebviewPanel(
-        "sonarCloudSecondarySidebarView",
+      SonarCloudMeasuresSidebarView._panel = vscode.window.createWebviewPanel(
+        "sonarCloudMeasuresSidebarView",
         "Alkahest",
         column,
         {
@@ -28,9 +28,9 @@ export default class SonarCloudSecondarySidebarView {
         }
       );
 
-      SonarCloudSecondarySidebarView._panel.onDidDispose(
+      SonarCloudMeasuresSidebarView._panel.onDidDispose(
         () => {
-          SonarCloudSecondarySidebarView._panel = undefined;
+          SonarCloudMeasuresSidebarView._panel = undefined;
         },
         null,
         context.subscriptions
@@ -39,9 +39,9 @@ export default class SonarCloudSecondarySidebarView {
   }
 
   public static update(measures: any, metrics: any): void {
-    if (SonarCloudSecondarySidebarView._panel) {
-      SonarCloudSecondarySidebarView._panel.webview.html =
-        SonarCloudSecondarySidebarView._getWebviewContent(measures, metrics);
+    if (SonarCloudMeasuresSidebarView._panel) {
+      SonarCloudMeasuresSidebarView._panel.webview.html =
+        SonarCloudMeasuresSidebarView._getWebviewContent(measures, metrics);
     }
   }
 
@@ -77,7 +77,7 @@ export default class SonarCloudSecondarySidebarView {
       const metric = measures[i].metric;
       const title = titleCase(metric.replace(/_/g, " "));
       const fullDescription =
-        SonarCloudSecondarySidebarView._metricDescriptions[metric] || "";
+        SonarCloudMeasuresSidebarView._metricDescriptions[metric] || "";
 
       if (metric === "lines") {
         continue;

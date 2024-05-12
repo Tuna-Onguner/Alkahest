@@ -70,7 +70,7 @@ export default class SonarCloudBugsSidebarView {
 
               await SonarCloudBugsSidebarView._highlightBuggedLine(
                 message.text,
-                [message.line,]
+                [message.line]
               );
             }
           })();
@@ -135,24 +135,22 @@ export default class SonarCloudBugsSidebarView {
     // Add a row for each bug
     for (const bug of bugs) {
       htmlContent += `<tr style="
-        background-color: ${
-          (function () {
-            switch (bug.severity) {
-              case "BLOCKER":
-                return ColorPalatte.red();
-              case "CRITICAL":
-                return ColorPalatte.orange();
-              case "MAJOR":
-                return ColorPalatte.yellow();
-              case "MINOR":
-                return ColorPalatte.green();
-              case "INFO":
-                return ColorPalatte.light_green();
-              default:
-                return ColorPalatte.white();
-            }
-          })()
-        };
+        background-color: ${(function () {
+          switch (bug.severity) {
+            case "BLOCKER":
+              return ColorPalatte.red();
+            case "CRITICAL":
+              return ColorPalatte.orange();
+            case "MAJOR":
+              return ColorPalatte.yellow();
+            case "MINOR":
+              return ColorPalatte.green();
+            case "INFO":
+              return ColorPalatte.light_green();
+            default:
+              return ColorPalatte.white();
+          }
+        })()};
       ">
         <td>${bug.id}</td>
         <td>${bug.message}</td>
@@ -218,7 +216,7 @@ export default class SonarCloudBugsSidebarView {
           decorations
         );
       } else {
-        console.warn("No duplicated lines found.");
+        console.warn("No bugs found.");
       }
     } catch (error) {
       console.error(error);

@@ -4,8 +4,10 @@ import * as dotenv from "dotenv"; // The module 'dotenv' is used to load environ
 
 import GeminiAI from "./models/gemini-ai/gemini-ai";
 import SonarQube from "./models/sonarqube/sonarqube";
-import SonarCloudSecondarySidebarView from "./views/views/sonarcloud-ssv";
-import SonarQubeDuplicatedLines from "./views/views/sonarcloud-dlv";
+
+import SonarCloudGeminiResponseSidebarView from "./views/views/sonarcloud-gsv";
+import SonarCloudDuplicationsSidebarView from "./views/views/sonarcloud-dlv";
+import SonarCloudMeasuresSidebarView from "./views/views/sonarcloud-msv";
 import SonarCloudBugsSidebarView from "./views/views/sonarcloud-bsv";
 
 // This method is called when the extension is activated
@@ -22,22 +24,43 @@ export function activate(context: vscode.ExtensionContext) {
   const gemini = new GeminiAI(); // Create a new instance of the GeminiAI class to interact with the Gemini model
   const sonarQube = new SonarQube(); // Create a new instance of the SonarQube class to interact with the SonarQube model
 
+  // Store the state of the CodeLens
+  let codeLensState: any = {};
+
+  const codeLensProvider = {
+    provideCodeLenses(): vscode.CodeLens[] {
+      const codeLenses: vscode.CodeLens[] = [];
+
+      const bugs: any[] = context.globalState.get("bugs") || [];
+
+      for (const bug of bugs) {
+        // Only add the CodeLens if it hasn't been clicked yet
+        if (!codeLensState[bug.id]) {
+          const line = bug.line;
+          const range = new vscode.Range(line - 1, 0, line - 1, 0);
+          const command: vscode.Command = {
+            title: "Solve with Gemini AI",
+            command: "alkahest.solveWithGeminiAI",
+            tooltip: "This will solve the issue with Gemini AI",
+            arguments: [bug], // Pass the bug as an argument to the command
+          };
+
+          codeLenses.push(new vscode.CodeLens(range, command));
+        }
+      }
+
+      return codeLenses;
+    },
+  };
+
+  let codeLensProviderDisposable = vscode.languages.registerCodeLensProvider(
+    { scheme: "file" },
+    codeLensProvider
+  );
+
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  let geminiTest = vscode.commands.registerCommand(
-    "alkahest.geminiTest",
-    async () => {
-      // The code placed here will be executed every time the command is executed
-      const response = await gemini.request("Say this is a test!");
-
-      if (response) {
-        // Display a message box to the user
-        vscode.window.showInformationMessage(response);
-      }
-    }
-  );
-
   let initializeSQ = vscode.commands.registerCommand(
     "alkahest.initializeSQ",
     async () => {
@@ -55,6 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
       };
 
       await sonarQube.scan(status); // Fetch the response from the SonarQube API
+
       // Execute the command to get the measures from the SonarQube API
       if (status.success) {
         vscode.commands.executeCommand("alkahest.sonarQubeGetMeasures");
@@ -68,18 +92,11 @@ export function activate(context: vscode.ExtensionContext) {
       const response = await sonarQube.getMeasures(); // Fetch the metrics from the SonarQube API
 
       // Display the response in the seconndary sidebar
-      SonarCloudSecondarySidebarView.createOrShow(context);
-      SonarCloudSecondarySidebarView.update(
+      SonarCloudMeasuresSidebarView.createOrShow(context);
+      SonarCloudMeasuresSidebarView.update(
         response.measures,
         response.metrics
       );
-    }
-  );
-
-  let sonarQubeLogout = vscode.commands.registerCommand(
-    "alkahest.sonarQubeLogout",
-    async () => {
-      await sonarQube.logout(); // Logout from the SonarQube API
     }
   );
 
@@ -89,8 +106,8 @@ export function activate(context: vscode.ExtensionContext) {
       const filePath = await sonarQube.getFilesWithDuplicatedLines(); // Fetch the files with duplicated lines from the SonarQube API
       const response = await sonarQube.getDuplications(filePath); // Fetch the duplications from the SonarQube API
 
-      SonarQubeDuplicatedLines.createOrShow(context, response, filePath); // Create or show the webview panel
-      SonarQubeDuplicatedLines.update(filePath, response); // Update the webview panel with the duplicated files
+      SonarCloudDuplicationsSidebarView.createOrShow(context, response, filePath); // Create or show the webview panel
+      SonarCloudDuplicationsSidebarView.update(filePath, response); // Update the webview panel with the duplicated files
     }
   );
 
@@ -128,14 +145,65 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(geminiTest); // Add the command to the list of disposables
-  context.subscriptions.push(initializeSQ); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeScan); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeGetMeasures); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeLogout); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeGetDuplications); // Add the command to the list of disposables
-  context.subscriptions.push(sonarQubeGetIssues); // Add the command to the list of disposables
+  let solveWithGeminiAI = vscode.commands.registerCommand(
+    "alkahest.solveWithGeminiAI",
+    async (args) => {
+      let { message, component, line } = args; // Destructure the 'args' object to get the 'message', 'component', and 'line' properties
 
+      // Read the file content
+      const document = await vscode.workspace.openTextDocument(component);
+      const text = document.getText();
+
+      // Copy line from the file + 10 lines above and below
+      const lines = text.split("\n");
+
+      const start = Math.max(0, line - 10);
+      const end = Math.min(lines.length, line + 10);
+
+      const code = lines.slice(start, end).join("\n");
+
+      // Call the Gemini model to solve the issue
+      const response = await gemini.request(
+        "Can you come up with a solution for this bug, please?",
+        "And, find relevant StackOverflow posts for this bug.",
+        code,
+        message
+      );
+
+      // Display the response in the webview
+      SonarCloudGeminiResponseSidebarView.createOrShow(context);
+      SonarCloudGeminiResponseSidebarView.update(response);
+
+      // Set the CodeLens state to true
+      codeLensState[args.id] = true;
+
+      // Refresh the CodeLens
+      //vscode.commands.executeCommand("editor.action.codeLens.refresh");
+    }
+  );
+
+  let sonarQubeLogout = vscode.commands.registerCommand(
+    "alkahest.sonarQubeLogout",
+    async () => {
+      await sonarQube.logout(); // Logout from the SonarQube API
+    }
+  );
+
+  // Automatically called commands
+  context.subscriptions.push(initializeSQ);
+  context.subscriptions.push(solveWithGeminiAI);
+
+  // Directly executable commands
+  context.subscriptions.push(sonarQubeScan);
+  context.subscriptions.push(sonarQubeGetMeasures);
+  context.subscriptions.push(sonarQubeGetDuplications);
+  context.subscriptions.push(sonarQubeGetIssues);
+  context.subscriptions.push(sonarQubeLogout);
+
+  // Additonal disposables
+  context.subscriptions.push(codeLensProviderDisposable);
+
+  // Execute the command to initialize the SonarQube API
   vscode.commands.executeCommand("alkahest.initializeSQ"); // Execute the command to initialize the SonarQube API
 }
 

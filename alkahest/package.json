@@ -3,6 +3,7 @@
   "displayName": "Alkahest",
   "description": "",
   "version": "0.0.1",
+  "publisher": "alkahest",
   "engines": {
     "vscode": "^1.86.0"
   },
@@ -14,28 +15,25 @@
   "contributes": {
     "commands": [
       {
-        "command": "alkahest.geminiTest",
-        "title": "Gemini Test"
-      },
-      {
         "command": "alkahest.sonarQubeScan",
         "title": "SonarQube Scan"
       },
       {
         "command": "alkahest.sonarQubeGetMeasures",
-        "title": "SonarQube Measures"
-      },
-      {
-        "command": "alkahest.sonarQubeLogout",
-        "title": "SonarQube Logout"
+        "title": "SonarQube Get Measures"
       },
       {
         "command": "alkahest.sonarQubeGetDuplications",
-        "title": "SonarQube Duplications"
+        "title": "SonarQube Get Duplications"
       },
       {
         "command": "alkahest.sonarQubeGetIssues",
-        "title": "SonarQube Issues"
+        "title": "SonarQube Get Bugs"
+      },
+      {
+        "command": "alkahest.solveWithGeminiAI",
+        "title": "Solve with Gemini AI",
+        "when": "false"
       }
     ]
   },
@@ -61,6 +59,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.0",
+    "@types/showdown": "^2.0.6",
     "axios": "^1.6.7",
     "dotenv": "^16.4.3",
     "sonarqube-scanner": "^3.3.0"
