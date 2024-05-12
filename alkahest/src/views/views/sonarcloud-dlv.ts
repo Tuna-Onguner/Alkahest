@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 
 import { ColorPalatte } from "../color-palatte";
 
-export default class SonarQubeDuplicatedLines {
+export default class SonarCloudDuplicationsSidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
 
   public static createOrShow(
@@ -12,10 +12,10 @@ export default class SonarQubeDuplicatedLines {
     keys: string[]
   ): void {
     const column = vscode.ViewColumn.Two;
-    if (SonarQubeDuplicatedLines._panel) {
-      SonarQubeDuplicatedLines._panel.reveal(column);
+    if (SonarCloudDuplicationsSidebarView._panel) {
+      SonarCloudDuplicationsSidebarView._panel.reveal(column);
     } else {
-      SonarQubeDuplicatedLines._panel = vscode.window.createWebviewPanel(
+      SonarCloudDuplicationsSidebarView._panel = vscode.window.createWebviewPanel(
         "sonarCloudDuplicationsSidebarView",
         "Duplicated Lines",
         column,
@@ -24,21 +24,21 @@ export default class SonarQubeDuplicatedLines {
         }
       );
 
-      SonarQubeDuplicatedLines._panel.onDidDispose(
+      SonarCloudDuplicationsSidebarView._panel.onDidDispose(
         () => {
-          SonarQubeDuplicatedLines._panel = undefined;
+          SonarCloudDuplicationsSidebarView._panel = undefined;
         },
         null,
         context.subscriptions
       );
 
       // Handle messages from the webview
-      SonarQubeDuplicatedLines._panel.webview.onDidReceiveMessage(
+      SonarCloudDuplicationsSidebarView._panel.webview.onDidReceiveMessage(
         (message) => {
           // Open the file when a path is clicked
           (async () => {
             const { filePaths } =
-              SonarQubeDuplicatedLines._getFilePathsFromKeys(
+              SonarCloudDuplicationsSidebarView._getFilePathsFromKeys(
                 keys,
                 duplications
               );
@@ -59,7 +59,7 @@ export default class SonarQubeDuplicatedLines {
                 );
 
                 // Highlight duplicated lines when a path is clicked
-                await SonarQubeDuplicatedLines.highlightDuplicatedLines(
+                await SonarCloudDuplicationsSidebarView.highlightDuplicatedLines(
                   message.filePath,
                   duplicationLines
                 );
@@ -83,14 +83,14 @@ export default class SonarQubeDuplicatedLines {
     duplicatedKeys: string[],
     duplications: { [filePath: string]: number[] }
   ): void {
-    const { fullPaths } = SonarQubeDuplicatedLines._getFilePathsFromKeys(
+    const { fullPaths } = SonarCloudDuplicationsSidebarView._getFilePathsFromKeys(
       duplicatedKeys,
       duplications
     ); // Destructure fullPaths from the returned object
 
-    if (SonarQubeDuplicatedLines._panel) {
-      SonarQubeDuplicatedLines._panel.webview.html =
-        SonarQubeDuplicatedLines._getWebviewContent(fullPaths, duplications); // Pass fullPaths instead of duplicatedPaths
+    if (SonarCloudDuplicationsSidebarView._panel) {
+      SonarCloudDuplicationsSidebarView._panel.webview.html =
+        SonarCloudDuplicationsSidebarView._getWebviewContent(fullPaths, duplications); // Pass fullPaths instead of duplicatedPaths
     }
   }
 
@@ -148,9 +148,9 @@ export default class SonarQubeDuplicatedLines {
       };
 
       const totalLines =
-        SonarQubeDuplicatedLines._getTotalLinesForDocument(path);
+        SonarCloudDuplicationsSidebarView._getTotalLinesForDocument(path);
       const duplicatedLines =
-        SonarQubeDuplicatedLines._getDuplicatedLinesLengthForPath(
+        SonarCloudDuplicationsSidebarView._getDuplicatedLinesLengthForPath(
           path,
           duplications
         ) || 1;
@@ -313,7 +313,7 @@ export default class SonarQubeDuplicatedLines {
     duplications: { [filePath: string]: number[] }
   ): number | undefined {
     const filePaths = Object.keys(duplications);
-    const filePath = SonarQubeDuplicatedLines._getFilePathFromFullPath(
+    const filePath = SonarCloudDuplicationsSidebarView._getFilePathFromFullPath(
       fullPath,
       filePaths
     );
