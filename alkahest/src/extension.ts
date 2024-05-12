@@ -15,7 +15,7 @@ import SonarCloudBugsSidebarView from "./views/views/sonarcloud-bsv";
 export function activate(context: vscode.ExtensionContext) {
   // Load environment variables from .env file
   const dotenvPath = path.resolve(__dirname, "../.env"); // Path to .env file
-  dotenv.config({ path: dotenvPath });
+  dotenv.config({ path:dotenvPath });
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
