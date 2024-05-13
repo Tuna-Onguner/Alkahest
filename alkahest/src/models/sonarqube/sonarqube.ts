@@ -23,7 +23,7 @@ export default class SonarQube {
   private _filesChanged: boolean;
   private _apiCallOptions: any; // Options for the API calls
 
-  private static _isPackageInstalled(): boolean {
+  private static async _isPackageInstalled(): Promise<boolean> {
     try {
       execSync(`npm list -g ${SonarQube._packageName}`, { stdio: "inherit" });
       return true;
@@ -32,13 +32,13 @@ export default class SonarQube {
     }
   }
 
-  private static _installPackage(): boolean {
+  private static async _installPackage(): Promise<boolean> {
     try {
       execSync(`npm install -g ${SonarQube._packageName}`, {
         stdio: "inherit",
       });
 
-      return SonarQube._isPackageInstalled();
+      return await SonarQube._isPackageInstalled();
     } catch (error) {
       return false;
     }

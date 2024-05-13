@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { markdownToHtml } from "../markdown-to-html";
 
 export default class SonarCloudGeminiResponseSidebarView {
   private static _panel: vscode.WebviewPanel | undefined;
@@ -49,11 +50,13 @@ export default class SonarCloudGeminiResponseSidebarView {
             </head>
             <body>
             <h1>Gemini Response</h1>
-            <pre>
-              <code>
-                ${response}
-              </code>
-            </pre>
+            <p>
+              ${
+                markdownToHtml(
+                  response
+                )
+              }
+            </p>
             </body>
         </html>
     `;
