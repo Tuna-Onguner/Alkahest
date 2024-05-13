@@ -1,13 +1,15 @@
 {
   "name": "alkahest",
   "displayName": "Alkahest",
-  "description": "",
+  "description": "Alkahest is a comprehensive Visual Studio Code (VSCode) plugin tailored for software practitioners. This plugin aims to scan users' projects to streamline bug detection, code duplication identification, and project evaluation tasks by seamlessly integrating with popular development tools such as SonarCloud, SonarQube, Gemini API, and StackOverflow.",
   "version": "0.0.1",
   "publisher": "alkahest",
   "engines": {
     "vscode": "^1.86.0"
   },
   "categories": [
+    "Linters",
+    "Chat",
     "Other"
   ],
   "activationEvents": [],
@@ -59,7 +61,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.0",
-    "@types/showdown": "^2.0.6",
     "axios": "^1.6.7",
     "dotenv": "^16.4.3",
     "sonarqube-scanner": "^3.3.0"
