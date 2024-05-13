@@ -49,15 +49,15 @@ environment and auto-review it with SonarQube to provide overall code review wit
 
 ### Installation and Execution
 
-- **Step 0:** Clone the project to your local from this repository. Start a new terminal session from the project. Then, direct to the folder "alkahest" which is under the main folder "Alkahest", i.e. `cd alkahest`. To make sure you are in the right folder, use `ls` command; you should see package-lock.json file there.
+- **Step 0:** Clone the project to your local from this repository. Start a new terminal session from the project. Then, direct to the folder "alkahest" which is under the main folder "Alkahest", i.e. `cd alkahest`. To make sure you are in the right folder, use `ls` command; you should see **package-lock.json** file there.
 
-- **Step 1:** Install dependencies using the command `npm install`. This will read the package-lock.json file and install all required packages listed there. If it fails, make sure that you succesfully completed the first steps and satisfied the prerequisites.
+- **Step 1:** Install dependencies using the command `npm install`. This will read the package-lock.json file and install all required packages listed there. If it fails, make sure that you succesfully completed the 'Step 0' and satisfied all the prerequisites listed above.
 
-- **Step 2:** Create a **.env** file under the folder "alkahest", you can use **.env-example** for the correct structure.
+- **Step 2:** Create a **.env** file under the folder "alkahest", you can use **.env-example** for the correct structure. You need to put your Gemini API key, SonarCloud API key, and SonarCloud organization there.
 
-- **Step 3:** Direct to the file "extension.ts" at path `Alkahest/alkahest/src/extension.ts`. To run the extension, use ***fn + F5*** keyboard combination on extension.ts, which will automatically start our extension on a new window.
+- **Step 3:** Direct to the file "extension.ts" at path `Alkahest/alkahest/src/extension.ts`. To run the extension, first, compile it from `Terminal > Run Build Task...` by choosing `tsc -p ./`; then, use ***fn + F5*** keyboard combination while you are still on the file **extension.ts**, which will automatically start our extension on a new window.
 
-- **Step 4:** Refer to User Manual, i.e. **alkahest-user-manual.md**. Or, see it in the Final Report.
+- **Step 4:** Now, refer to the User Manual, i.e. **alkahest-user-manual.md**. Or, see it in the Final Report.
 
 Refer to https://code.visualstudio.com/api if you need either further assistance or guidance.
 
@@ -75,4 +75,4 @@ To summarize, you can see the files added by us at path `Alkahest/alkahest/src`.
 - `src/models` has backend implementations.
 - `src/views` has frontend implementations.
 
-And, all executable commands of our extension are listed under the file **package.json**.
+And, all executable commands of our extension are listed in the file **package.json**.
